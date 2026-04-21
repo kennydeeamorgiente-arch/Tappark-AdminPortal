@@ -1,0 +1,190 @@
+/**
+ * Activity Logs Styles
+ */
+
+/* Stats Card Backgrounds - All maroon for consistency */
+.stats-card-maroon {
+background: linear-gradient(135deg, #800000 0%, #990000 100%);
+}
+
+.stats-card-gray {
+background: linear-gradient(135deg, #800000 0%, #990000 100%);
+}
+
+/* Dark Theme - All stat cards use consistent maroon theme */
+[data-bs-theme="dark"] .stats-card-maroon,
+[data-bs-theme="dark"] .stats-card-gray {
+background: linear-gradient(135deg, #4a1a1a 0%, #5a2525 100%) !important;
+color: #e8d4d4 !important;
+border-color: rgba(128, 0, 0, 0.25) !important;
+box-shadow: 0 2px 10px rgba(128, 0, 0, 0.15) !important;
+}
+
+/* Logs analytics containers */
+.logs-analytics-row > [class^="col-"],
+.logs-analytics-row > [class*=" col-"] {
+display: flex;
+}
+
+.logs-panel-card {
+border: 1px solid rgba(128, 0, 0, 0.12);
+border-radius: 14px;
+overflow: hidden;
+background: linear-gradient(180deg, #fffefe 0%, #fff6f7 100%);
+box-shadow: 0 10px 24px rgba(56, 19, 26, 0.07);
+width: 100%;
+}
+
+.logs-panel-header {
+background: linear-gradient(135deg, rgba(139, 31, 43, 0.11) 0%, rgba(139, 31, 43, 0.03) 100%) !important;
+border-bottom: 1px solid rgba(139, 31, 43, 0.15) !important;
+padding: 0.85rem 1rem 0.72rem !important;
+}
+
+/* Logs table card header (title + pagination) should be transparent */
+.logs-table-panel > .logs-panel-header {
+background: transparent !important;
+}
+
+.logs-panel-header h5 {
+color: #44242b;
+}
+
+.logs-panel-header .text-muted {
+color: #7c5d63 !important;
+}
+
+.logs-timeline-body {
+padding: 0.75rem 0.95rem 0.95rem;
+}
+
+.logs-timeline-shell {
+position: relative;
+height: 300px;
+width: 100%;
+min-height: 300px;
+max-height: 300px;
+}
+
+.logs-timeline-shell canvas {
+width: 100% !important;
+height: 100% !important;
+}
+
+.logs-active-users-body {
+max-height: 300px;
+overflow-y: auto;
+}
+
+@media (max-width: 991.98px) {
+.logs-timeline-shell {
+height: 250px;
+min-height: 250px;
+max-height: 250px;
+}
+
+.logs-active-users-body {
+max-height: 250px;
+}
+}
+
+.logs-active-user-item {
+padding-top: 0.6rem !important;
+padding-bottom: 0.6rem !important;
+}
+
+.logs-active-user-name {
+line-height: 1.25;
+}
+
+.logs-active-user-email {
+font-size: 0.75rem;
+overflow-wrap: anywhere;
+}
+
+[data-bs-theme="dark"] .logs-panel-card {
+border-color: rgba(208, 131, 140, 0.26) !important;
+background: linear-gradient(180deg, #2e2227 0%, #291e23 100%) !important;
+box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24) !important;
+}
+
+[data-bs-theme="dark"] .logs-panel-header {
+background: linear-gradient(135deg, rgba(208, 131, 140, 0.24) 0%, rgba(208, 131, 140, 0.07) 100%) !important;
+border-bottom: 1px solid rgba(208, 131, 140, 0.24) !important;
+}
+
+[data-bs-theme="dark"] .logs-table-panel > .logs-panel-header {
+background: transparent !important;
+}
+
+[data-bs-theme="dark"] .logs-panel-header h5 {
+color: #f3dde1;
+}
+
+[data-bs-theme="dark"] .logs-panel-header .text-muted {
+color: #d9b7be !important;
+}
+
+[data-bs-theme="dark"] .logs-panel-header i {
+color: #f2b6bf !important;
+}
+
+[data-bs-theme="dark"] .logs-panel-card .card-body {
+background: transparent !important;
+}
+
+/* Logs Table Styling */
+.logs-table {
+border-radius: 8px;
+overflow: hidden;
+}
+
+.logs-table thead th {
+border: none;
+padding: 1rem;
+font-weight: 600;
+text-transform: uppercase;
+font-size: 0.85rem;
+background: transparent !important;
+color: #3f2026;
+border-bottom: 1px solid rgba(139, 31, 43, 0.18);
+}
+
+.logs-table tbody tr {
+transition: background-color 0.2s ease;
+border-bottom: 1px solid #e9ecef;
+}
+
+.logs-table tbody tr:last-child {
+border-bottom: none;
+}
+
+.logs-table tbody tr:hover {
+background-color: rgba(128, 0, 0, 0.05);
+}
+
+.logs-table tbody td {
+padding: 0.75rem 1rem;
+vertical-align: middle;
+}
+
+/* Dark Mode Table Styling */
+[data-bs-theme="dark"] .logs-table tbody tr {
+border-bottom-color: rgba(128, 0, 0, 0.2);
+}
+
+[data-bs-theme="dark"] .logs-table tbody tr:hover {
+background-color: rgba(128, 0, 0, 0.2);
+}
+
+[data-bs-theme="dark"] .logs-table thead th {
+background: transparent !important;
+color: #f5dee3;
+border-bottom-color: rgba(208, 131, 140, 0.28);
+}
+
+/* Keep logs filter actions consistent with other filter containers */
+#logsFilterCard .compact-filter-actions .btn {
+border-radius: 8px !important;
+}
+
