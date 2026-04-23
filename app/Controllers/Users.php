@@ -7,10 +7,12 @@ use App\Models\UserModel;
 class Users extends BaseController
 {
     protected $userModel;
+    protected $misApiService;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->misApiService = service('misApiService');
         helper('activity'); // Load activity helper for logging
     }
 
@@ -116,18 +118,209 @@ class Users extends BaseController
     }
 
     /**
+     * Lookup a student from the MIS API
+     */
+    public function lookupStudent()
+    {
+        $identifier = trim((string) ($this->request->getGet('student_id') ?? $this->request->getGet('search') ?? ''));
+
+        if ($identifier === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Subscriber ID is required.'
+            ])->setStatusCode(400);
+        }
+
+        $localUser = $this->userModel->getUserByExternalId($identifier);
+        if ($localUser) {
+            $identityType = ((int) ($localUser['user_type_id'] ?? 0) === UserModel::ROLE_ADMIN || (int) ($localUser['user_type_id'] ?? 0) === UserModel::ROLE_ATTENDANT)
+                ? 'employee'
+                : 'student';
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'student_id' => $localUser['external_user_id'] ?? $identifier,
+                    'external_user_id' => $localUser['external_user_id'] ?? $identifier,
+                    'first_name' => $localUser['first_name'] ?? '',
+                    'last_name' => $localUser['last_name'] ?? '',
+                    'full_name' => trim(($localUser['first_name'] ?? '') . ' ' . ($localUser['last_name'] ?? '')),
+                    'email' => $localUser['email'] ?? '',
+                    'department_name' => $localUser['user_type_name'] ?? 'Subscriber',
+                    'identity_type' => $identityType,
+                    'source' => 'local'
+                ]
+            ]);
+        }
+
+        $studentResponse = $this->misApiService->lookupIdentity($identifier);
+
+        if (empty($studentResponse['success'])) {
+            $status = (int) ($studentResponse['http_status'] ?? 503);
+            if ($status === 404) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'allow_manual' => true,
+                    'message' => 'No matching record was returned. Use Add Guest to create a manual account.',
+                    'source' => 'mis'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $studentResponse['message'] ?? 'Unable to locate the record.',
+                'source' => 'mis'
+            ])->setStatusCode($status);
+        }
+
+        $person = $this->extractMisRecord($studentResponse, $studentResponse['identity_type'] ?? 'data');
+        if (empty($person)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'A record was returned, but it could not be read.'
+            ])->setStatusCode(502);
+        }
+
+        $formatted = $this->formatMisPerson($person, (string) ($studentResponse['identity_type'] ?? 'student'));
+        $syncResult = $this->syncSubscriberFromMisRecord($formatted);
+
+        if (!$syncResult['success']) {
+            log_message('warning', 'Users::lookupStudent - local sync skipped: ' . ($syncResult['message'] ?? 'Unknown reason'));
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => $formatted + ['source' => 'mis']
+        ]);
+    }
+
+    /**
+     * Search students in MIS
+     */
+    public function searchStudents()
+    {
+        $search = trim((string) ($this->request->getGet('search') ?? ''));
+
+        if ($search === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Search text is required.'
+            ])->setStatusCode(400);
+        }
+
+        $studentResponse = $this->misApiService->searchStudents($search);
+        if (empty($studentResponse['success'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $studentResponse['message'] ?? 'Unable to search records.'
+            ])->setStatusCode((int) ($studentResponse['http_status'] ?? 502));
+        }
+
+        $students = $this->extractMisRecords($studentResponse, 'students');
+        $formatted = [];
+        foreach ($students as $student) {
+            $formatted[] = $this->formatMisPerson($student, 'student');
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => $formatted
+        ]);
+    }
+
+    /**
+     * Get departments from MIS
+     */
+    public function getDepartments()
+    {
+        $departmentResponse = $this->misApiService->getDepartments();
+
+        if (empty($departmentResponse['success'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $departmentResponse['message'] ?? 'Unable to load departments.'
+            ])->setStatusCode((int) ($departmentResponse['http_status'] ?? 502));
+        }
+
+        $departments = $this->extractMisRecords($departmentResponse, 'departments');
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => array_map(function ($department) {
+                return $this->formatMisDepartment($department);
+            }, $departments)
+        ]);
+    }
+
+    /**
      * Create new user (AJAX endpoint)
      */
     public function create()
     {
         $data = $this->request->getPost();
+        $isSubscriber = (int) ($data['user_type_id'] ?? 0) === UserModel::ROLE_SUBSCRIBER;
 
-        // Default status to active if not provided (since we removed the field from form)
-        if (empty($data['status'])) {
-            $data['status'] = 'active';
+        if ($isSubscriber) {
+            $prepared = $this->prepareSubscriberPayload($data, false);
+            if (!$prepared['success']) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => $prepared['message'],
+                    'errors' => $prepared['errors'] ?? []
+                ])->setStatusCode(400);
+            }
+
+            $payload = $prepared['data'];
+            $existingUser = null;
+            if (!empty($payload['external_user_id'])) {
+                $existingUser = $this->userModel->getUserByExternalId($payload['external_user_id']);
+            }
+
+            if (!$existingUser && !empty($payload['email'])) {
+                $existingUser = $this->userModel->where('email', $payload['email'])->first();
+            }
+
+            if ($existingUser) {
+                unset($payload['password']);
+                $result = $this->userModel->updateUser($existingUser['user_id'], $payload);
+                $userId = $existingUser['user_id'];
+                $message = 'Subscriber synced successfully';
+                $logAction = 'User Sync';
+            } else {
+                $result = $this->userModel->createUser($payload);
+                $userId = $result;
+                $message = 'Subscriber created successfully';
+                $logAction = 'User';
+            }
+
+            if ($result) {
+                $user = $this->userModel->getUserById($userId);
+                $stats = $this->userModel->getUserStats();
+                $logResult = $existingUser
+                    ? log_update($logAction, $userId, "{$payload['first_name']} {$payload['last_name']}")
+                    : log_create($logAction, $userId, "{$payload['first_name']} {$payload['last_name']}");
+
+                if ($logResult === false) {
+                    log_message('error', 'Users::create - Activity log failed for user_id ' . $userId);
+                }
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => $message,
+                    'data' => $user,
+                    'stats' => $stats
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to save subscriber'
+            ])->setStatusCode(500);
         }
-        
-        // Validate input
+
+        // Keep a guarded fallback for non-subscriber records so existing behavior remains intact.
+        $data['status'] = $data['status'] ?? 'active';
+
         if (!$this->validate([
             'first_name' => 'required|min_length[2]|max_length[100]',
             'last_name' => 'required|min_length[2]|max_length[100]',
@@ -142,32 +335,21 @@ class Users extends BaseController
         }
 
         $userId = $this->userModel->createUser($data);
-
-        if ($userId) {
-            // Log activity
-            $logResult = log_create('User', $userId, "{$data['first_name']} {$data['last_name']}");
-            if ($logResult === false) {
-                log_message('error', 'Users::create - Activity log failed for user_id ' . $userId);
-            }
-
-            // Get the full user data for dynamic table update
-            $newUser = $this->userModel->getUserById($userId);
-            
-            // Get updated stats
-            $stats = $this->userModel->getUserStats();
-            
+        if (!$userId) {
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'User created successfully',
-                'data' => $newUser,
-                'stats' => $stats
-            ]);
+                'success' => false,
+                'message' => 'Failed to create user'
+            ])->setStatusCode(500);
         }
 
+        log_create('User', $userId, "{$data['first_name']} {$data['last_name']}");
+
         return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Failed to create user'
-        ])->setStatusCode(500);
+            'success' => true,
+            'message' => 'User created successfully',
+            'data' => $this->userModel->getUserById($userId),
+            'stats' => $this->userModel->getUserStats()
+        ]);
     }
 
     /**
@@ -184,6 +366,40 @@ class Users extends BaseController
             ])->setStatusCode(404);
         }
 
+        $isSubscriber = (int) ($user['user_type_id'] ?? 0) === UserModel::ROLE_SUBSCRIBER;
+
+        if ($isSubscriber) {
+            $prepared = $this->prepareSubscriberPayload($this->request->getPost(), true, $user);
+            if (!$prepared['success']) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => $prepared['message'],
+                    'errors' => $prepared['errors'] ?? []
+                ])->setStatusCode(400);
+            }
+
+            $payload = $prepared['data'];
+            $payload['status'] = $this->request->getPost('status') ?: ($user['status'] ?? 'active');
+            $payload['hour_balance'] = $this->request->getPost('hour_balance') ?? ($user['hour_balance'] ?? 0);
+            $payload['user_type_id'] = UserModel::ROLE_SUBSCRIBER;
+
+            if ($this->userModel->updateUser($userId, $payload)) {
+                log_update('User', $userId, "{$payload['first_name']} {$payload['last_name']}");
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'User updated successfully',
+                    'data' => $this->userModel->getUserById($userId),
+                    'stats' => $this->userModel->getUserStats()
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to update user'
+            ])->setStatusCode(500);
+        }
+
         $data = [
             'first_name' => $this->request->getPost('first_name'),
             'last_name' => $this->request->getPost('last_name'),
@@ -193,13 +409,11 @@ class Users extends BaseController
             'hour_balance' => $this->request->getPost('hour_balance')
         ];
 
-        // Only update password if provided
         $password = $this->request->getPost('password');
         if (!empty($password)) {
             $data['password'] = $password;
         }
 
-        // Validate
         $rules = [
             'first_name' => 'required|min_length[2]|max_length[100]',
             'last_name' => 'required|min_length[2]|max_length[100]',
@@ -219,23 +433,13 @@ class Users extends BaseController
         }
 
         if ($this->userModel->updateUser($userId, $data)) {
-            // Log activity
-            $logResult = log_update('User', $userId, "{$data['first_name']} {$data['last_name']}");
-            if ($logResult === false) {
-                log_message('error', 'Users::update - Activity log failed for user_id ' . $userId);
-            }
-
-            // Get the updated user data for dynamic table update
-            $updatedUser = $this->userModel->getUserById($userId);
-            
-            // Get updated stats
-            $stats = $this->userModel->getUserStats();
+            log_update('User', $userId, "{$data['first_name']} {$data['last_name']}");
 
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'User updated successfully',
-                'data' => $updatedUser,
-                'stats' => $stats
+                'data' => $this->userModel->getUserById($userId),
+                'stats' => $this->userModel->getUserStats()
             ]);
         }
 
@@ -259,12 +463,12 @@ class Users extends BaseController
             ])->setStatusCode(404);
         }
 
-        // Safeguard: Do not allow deletion if user has active balance
-        if ($user['user_type_id'] == UserModel::ROLE_SUBSCRIBER && floatval($user['hour_balance'] ?? 0) > 0) {
+        // Subscribers are now managed from MIS and should not be deleted locally.
+        if ((int) ($user['user_type_id'] ?? 0) === UserModel::ROLE_SUBSCRIBER) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Cannot delete subscriber with active hour balance. Please exhaust or refund the balance first.'
-            ])->setStatusCode(400);
+                'message' => 'Subscriber deletion is disabled. Please update the subscriber balance or status instead.'
+            ])->setStatusCode(403);
         }
 
         if ($this->userModel->deleteUser($userId)) {
@@ -818,7 +1022,343 @@ class Users extends BaseController
                 return "1=1";
         }
     }
-    
+
+    /**
+     * Extract a single MIS record from a response payload.
+     */
+    private function extractMisRecord(array $payload, string $preferredKey = 'data'): array
+    {
+        $candidates = [];
+
+        if (isset($payload[$preferredKey])) {
+            $candidates[] = $payload[$preferredKey];
+        }
+
+        foreach (['data', 'student', 'employee', 'department', 'result', 'results'] as $key) {
+            if (isset($payload[$key])) {
+                $candidates[] = $payload[$key];
+            }
+        }
+
+        foreach ($candidates as $candidate) {
+            $record = $this->normalizeMisRecord($candidate);
+            if (!empty($record)) {
+                return $record;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Extract a list of MIS records from a response payload.
+     */
+    private function extractMisRecords(array $payload, string $preferredKey = 'data'): array
+    {
+        $candidates = [];
+
+        if (isset($payload[$preferredKey])) {
+            $candidates[] = $payload[$preferredKey];
+        }
+
+        foreach (['data', 'students', 'employees', 'departments', 'result', 'results'] as $key) {
+            if (isset($payload[$key])) {
+                $candidates[] = $payload[$key];
+            }
+        }
+
+        foreach ($candidates as $candidate) {
+            $records = $this->normalizeMisRecords($candidate);
+            if (!empty($records)) {
+                return $records;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Normalize a student record returned by MIS.
+     */
+    private function formatMisPerson(array $person, string $identityType = 'student'): array
+    {
+        $person = $this->normalizeMisRecord($person);
+
+        $identifier = (string) ($person['student_id'] ?? $person['employee_id'] ?? $person['studentId'] ?? $person['employeeId'] ?? $person['id'] ?? $person['external_user_id'] ?? '');
+        $firstName = trim((string) ($person['first_name'] ?? $person['firstname'] ?? $person['given_name'] ?? $person['firstName'] ?? ''));
+        $lastName = trim((string) ($person['last_name'] ?? $person['lastname'] ?? $person['surname'] ?? $person['lastName'] ?? ''));
+        $email = trim((string) ($person['email'] ?? $person['email_address'] ?? $person['school_email'] ?? $person['student_email'] ?? $person['employee_email'] ?? ''));
+        $department = trim((string) ($person['department'] ?? $person['department_name'] ?? $person['program'] ?? $person['course'] ?? $person['division'] ?? ''));
+
+        if ($email === '' && $identifier !== '') {
+            $safeIdentifier = preg_replace('/[^a-zA-Z0-9]+/', '.', $identifier);
+            $safeIdentifier = trim((string) $safeIdentifier, '.');
+            $email = strtolower('mis.' . $identityType . '.' . $safeIdentifier . '@tappark.local');
+        }
+
+        return [
+            'student_id' => $identifier,
+            'external_user_id' => $identifier,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'full_name' => trim($firstName . ' ' . $lastName),
+            'email' => $email,
+            'department_name' => $department,
+            'identity_type' => $identityType,
+            'raw' => $person
+        ];
+    }
+
+    /**
+     * Normalize a single MIS record, unwrapping common envelopes.
+     */
+    private function normalizeMisRecord($candidate): array
+    {
+        if (!is_array($candidate) || empty($candidate)) {
+            return [];
+        }
+
+        foreach (['student', 'employee', 'department', 'data', 'result', 'record', 'item'] as $key) {
+            if (!isset($candidate[$key]) || !is_array($candidate[$key]) || empty($candidate[$key])) {
+                continue;
+            }
+
+            $value = $candidate[$key];
+            if ($this->isAssoc($value)) {
+                return $value;
+            }
+
+            if (isset($value[0]) && is_array($value[0])) {
+                return $value[0];
+            }
+        }
+
+        if ($this->isAssoc($candidate)) {
+            return $candidate;
+        }
+
+        if (isset($candidate[0]) && is_array($candidate[0])) {
+            return $candidate[0];
+        }
+
+        return [];
+    }
+
+    /**
+     * Normalize MIS list payloads into an array of records.
+     */
+    private function normalizeMisRecords($candidate): array
+    {
+        if (!is_array($candidate) || empty($candidate)) {
+            return [];
+        }
+
+        foreach (['students', 'employees', 'departments', 'data', 'result', 'results'] as $key) {
+            if (!isset($candidate[$key]) || !is_array($candidate[$key]) || empty($candidate[$key])) {
+                continue;
+            }
+
+            $value = $candidate[$key];
+            if (!$this->isAssoc($value)) {
+                return $value;
+            }
+
+            return [$value];
+        }
+
+        if (!$this->isAssoc($candidate)) {
+            return $candidate;
+        }
+
+        $record = $this->normalizeMisRecord($candidate);
+        return !empty($record) ? [$record] : [];
+    }
+
+    /**
+     * Normalize a department record returned by MIS.
+     */
+    private function formatMisDepartment(array $department): array
+    {
+        $departmentName = (string) ($department['department'] ?? $department['department_name'] ?? $department['name'] ?? $department['title'] ?? '');
+
+        return [
+            'department' => $departmentName,
+            'department_name' => $departmentName,
+            'raw' => $department
+        ];
+    }
+
+    /**
+     * Build a subscriber payload from MIS or fallback request data.
+     */
+    private function prepareSubscriberPayload(array $data, bool $isUpdate = false, ?array $existingUser = null): array
+    {
+        $externalUserId = trim((string) ($data['external_user_id'] ?? $data['student_id'] ?? ($existingUser['external_user_id'] ?? '')));
+
+        if ($externalUserId === '' && !$isUpdate) {
+            return [
+                'success' => false,
+                'message' => 'Subscriber ID is required.',
+                'errors' => ['external_user_id' => 'Subscriber ID is required.']
+            ];
+        }
+
+        $misData = [];
+        if ($externalUserId !== '') {
+            $lookup = $this->misApiService->getStudent($externalUserId);
+            if (empty($lookup['success'])) {
+                if (!$isUpdate) {
+                    return [
+                        'success' => false,
+                        'message' => $lookup['message'] ?? 'Unable to fetch the subscriber record.',
+                        'errors' => ['external_user_id' => 'Unable to fetch the subscriber record.']
+                    ];
+                }
+
+                log_message('warning', 'MIS lookup failed for subscriber update: ' . ($lookup['message'] ?? 'Unknown error'));
+            } else {
+                $misData = $this->extractMisRecord($lookup, $lookup['identity_type'] ?? 'data');
+                if (empty($misData) && !$isUpdate) {
+                    return [
+                        'success' => false,
+                        'message' => 'A record was returned, but it could not be parsed.',
+                        'errors' => ['external_user_id' => 'A record was returned, but it could not be parsed.']
+                    ];
+                }
+            }
+        }
+
+        $mapped = !empty($misData)
+            ? $this->formatMisPerson($misData, (string) ($misData['identity_type'] ?? 'student'))
+            : [
+                'student_id' => $externalUserId,
+                'external_user_id' => $externalUserId,
+                'first_name' => trim((string) ($data['first_name'] ?? $existingUser['first_name'] ?? '')),
+                'last_name' => trim((string) ($data['last_name'] ?? $existingUser['last_name'] ?? '')),
+                'email' => trim((string) ($data['email'] ?? $existingUser['email'] ?? '')),
+                'department_name' => '',
+                'raw' => [],
+            ];
+
+        $payload = [
+            'external_user_id' => $mapped['external_user_id'],
+            'first_name' => $mapped['first_name'],
+            'last_name' => $mapped['last_name'],
+            'email' => $mapped['email'],
+            'user_type_id' => UserModel::ROLE_SUBSCRIBER,
+            'hour_balance' => (int) ($data['hour_balance'] ?? ($existingUser['hour_balance'] ?? 0)),
+            'status' => $data['status'] ?? ($existingUser['status'] ?? 'active'),
+        ];
+
+        $errors = [];
+        if ($payload['external_user_id'] === '') {
+            $errors['external_user_id'] = 'Subscriber ID is required.';
+        }
+        if ($payload['first_name'] === '') {
+            $errors['first_name'] = 'First name is required.';
+        }
+        if ($payload['last_name'] === '') {
+            $errors['last_name'] = 'Last name is required.';
+        }
+        if ($payload['email'] === '') {
+            $errors['email'] = 'Email is required.';
+        }
+
+        if (!empty($errors)) {
+            return [
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $errors
+            ];
+        }
+
+        if (!$isUpdate && empty($data['password'])) {
+            $payload['password'] = $this->generateTemporaryPassword($payload['external_user_id']);
+        } elseif (!empty($data['password'])) {
+            $payload['password'] = $data['password'];
+        }
+
+        return [
+            'success' => true,
+            'data' => $payload
+        ];
+    }
+
+    /**
+     * Generate a temporary password for MIS-synced subscribers.
+     */
+    private function generateTemporaryPassword(string $seed): string
+    {
+        return 'TapPark-' . substr(hash('sha256', $seed . '|' . bin2hex(random_bytes(8))), 0, 12);
+    }
+
+    /**
+     * Upsert a MIS subscriber into the local database.
+     */
+    private function syncSubscriberFromMisRecord(array $person): array
+    {
+        $externalUserId = trim((string) ($person['external_user_id'] ?? $person['student_id'] ?? ''));
+
+        if ($externalUserId === '') {
+            return [
+                'success' => false,
+                'message' => 'Missing external user ID.'
+            ];
+        }
+
+        $existingUser = $this->userModel->getUserByExternalId($externalUserId);
+        $payload = [
+            'external_user_id' => $externalUserId,
+            'first_name' => trim((string) ($person['first_name'] ?? '')),
+            'last_name' => trim((string) ($person['last_name'] ?? '')),
+            'email' => trim((string) ($person['email'] ?? '')),
+            'user_type_id' => UserModel::ROLE_SUBSCRIBER,
+            'hour_balance' => $existingUser ? (int) ($existingUser['hour_balance'] ?? 0) : 0,
+            'status' => $existingUser['status'] ?? 'active',
+        ];
+
+        if ($payload['first_name'] === '' || $payload['last_name'] === '') {
+            return [
+                'success' => false,
+                'message' => 'Incomplete MIS record.'
+            ];
+        }
+
+        if ($existingUser) {
+            $result = $this->userModel->updateUser($existingUser['user_id'], $payload);
+            return [
+                'success' => (bool) $result,
+                'message' => $result ? 'Subscriber updated locally.' : 'Failed to update local subscriber.'
+            ];
+        }
+
+        if ($payload['email'] === '') {
+            $safeIdentifier = preg_replace('/[^a-zA-Z0-9]+/', '.', $externalUserId);
+            $safeIdentifier = trim((string) $safeIdentifier, '.');
+            $payload['email'] = strtolower('subscriber.' . $safeIdentifier . '@tappark.local');
+        }
+
+        $payload['password'] = $this->generateTemporaryPassword($externalUserId);
+        $result = $this->userModel->createUser($payload);
+
+        return [
+            'success' => (bool) $result,
+            'message' => $result ? 'Subscriber created locally.' : 'Failed to create local subscriber.'
+        ];
+    }
+
+    /**
+     * Check whether an array is associative.
+     */
+    private function isAssoc(array $array): bool
+    {
+        if ($array === []) {
+            return false;
+        }
+
+        return array_keys($array) !== range(0, count($array) - 1);
+    }
+
     // ====================================
     // STAFF MANAGEMENT METHODS
     // ====================================

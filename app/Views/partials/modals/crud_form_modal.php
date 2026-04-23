@@ -32,36 +32,40 @@
                         <input type="hidden" id="crudAction" name="action" value="add">
                         
                         <!-- ============================
-                             SUBSCRIBER FIELDS
+                            SUBSCRIBER FIELDS
                              ============================ -->
                         <div class="entity-fields fields-users" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Subscriber ID <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="external_user_id" id="userStudentId" placeholder="Enter subscriber ID">
+                                    <button class="btn btn-outline-secondary" type="button" id="lookupStudentBtn">
+                                        <i class="fas fa-search me-1"></i>Load Record
+                                    </button>
+                                </div>
+                                <small class="text-muted">Pull the subscriber record before saving.</small>
+                                <div class="invalid-feedback" id="error-external_user_id"></div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Subscriber First Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="first_name" id="userFirstName">
+                                    <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="first_name" id="userFirstName" readonly>
                                     <div class="invalid-feedback" id="error-first_name"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Subscriber Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="last_name" id="userLastName">
+                                    <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="last_name" id="userLastName" readonly>
                                     <div class="invalid-feedback" id="error-last_name"></div>
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Subscriber Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email" id="userEmail">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" id="userEmail" readonly>
                                 <div class="invalid-feedback" id="error-email"></div>
                             </div>
-                            <div class="mb-3 password-field">
-                                <label class="form-label">Password <span class="text-danger add-only">*</span></label>
-                                <input type="password" class="form-control" name="password" id="userPassword" minlength="8">
-                                <small class="text-muted edit-only">Leave blank to keep current password</small>
-                                <small class="text-muted add-only">Minimum 8 characters</small>
-                                <div class="invalid-feedback" id="error-password"></div>
-                                <div class="password-strength-meter" aria-hidden="true">
-                                    <div class="password-strength-bar" id="userPasswordStrengthBar"></div>
-                                </div>
-                                <small class="password-strength-text" id="userPasswordStrengthText">Enter a password to check strength.</small>
+                            <div class="alert alert-light border small mb-3">
+                                <i class="fas fa-info-circle me-2 text-primary"></i>
+                                Subscriber identity is loaded automatically. The admin only manages the parking hour balance and account status here.
                             </div>
                             <input type="hidden" name="user_type_id" id="userTypeId" value="1">
 

@@ -29,4 +29,13 @@ class Services extends BaseService
      *     return new \CodeIgniter\Example();
      * }
      */
+
+    public static function misApiService(bool $getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('misApiService');
+        }
+
+        return new \App\Libraries\MisApiService();
+    }
 }

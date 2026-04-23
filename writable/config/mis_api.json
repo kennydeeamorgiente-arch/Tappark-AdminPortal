@@ -1,0 +1,9 @@
+{
+    "base_url": "https://mis.foundationu.com/api/tappark",
+    "refresh_url": "https://mis.foundationu.com/api/token/refresh",
+    "owner": "tappark",
+    "system": "tappark",
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7Im93bmVyIjoidGFwcGFyayIsInN5c3RlbSI6InRhcHBhcmsiLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIn0sImlhdCI6MTc3MjQzMDY1OCwiZXhwIjoxNzcyNDM3ODU4fQ.3_B-Bli3B6uuQGjZtf9E-tRUHh-9jlLukbFUo0gu4eM",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7Im93bmVyIjoidGFwcGFyayIsInN5c3RlbSI6InRhcHBhcmsiLCJ0eXBlIjoicmVmcmVzaF90b2tlbiJ9LCJpYXQiOjE3NzI0MzA2NTh9.0VMvSEqWk2_BtjG_HQibQT5HsYLEZpLIVIlbPLIjuJM",
+    "expires_at": "2026-03-02 15:50:58"
+}

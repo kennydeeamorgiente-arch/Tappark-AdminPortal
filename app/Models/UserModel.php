@@ -182,6 +182,20 @@ class UserModel extends Model
     }
 
     /**
+     * Get user by external system identifier
+     */
+    public function getUserByExternalId($externalUserId)
+    {
+        return $this->db->table('users u')
+            ->select('u.*, t.account_type_name as user_type_name, pa.parking_area_name')
+            ->join('types t', 'u.user_type_id = t.type_id', 'left')
+            ->join('parking_area pa', 'u.assigned_area_id = pa.parking_area_id', 'left')
+            ->where('u.external_user_id', $externalUserId)
+            ->get()
+            ->getRowArray();
+    }
+
+    /**
      * Get attendant by ID with relationships
      */
     public function getAttendantById($userId)

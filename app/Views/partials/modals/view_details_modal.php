@@ -53,6 +53,10 @@
                                                 <span id="viewUserEmail" class="fw-semibold">-</span>
                                             </div>
                                             <div class="col-sm-6 mb-2">
+                                                <small class="text-muted d-block">Student ID</small>
+                                                <span id="viewUserExternalId" class="fw-semibold">-</span>
+                                            </div>
+                                            <div class="col-sm-6 mb-2">
                                                 <small class="text-muted d-block">Member Since</small>
                                                 <span id="viewUserCreatedAt" class="fw-semibold">-</span>
                                             </div>

@@ -323,8 +323,8 @@ if (typeof window.initPageScripts === 'function') {
                     filterOptions += `<option value="${type.user_type_id}">${type.user_type_name}</option>`;
                 });
 
-                // Update modal dropdown
-                $('#userTypeId').html(options);
+                // Keep the subscriber type locked to subscriber
+                $('#userTypeId').val(1);
 
                 // Subscribers page requirement: remove User Type filter
                 // Keep the modal user type dropdown intact, but hide/disable the filter UI.
@@ -525,14 +525,6 @@ if (typeof window.initPageScripts === 'function') {
                                         title="Edit"
                                         style="border-color: #6c757d; color: #6c757d;">
                                     <i class="fas fa-pen"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger delete-user-btn" 
-                                        data-id="${user.user_id}" 
-                                        data-name="${escapeHtml(user.first_name + ' ' + user.last_name)}" 
-                                        data-balance="${user.hour_balance || 0}"
-                                        title="Delete"
-                                        style="border-color: #dc3545; color: #dc3545;">
-                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -1046,6 +1038,7 @@ if (typeof window.initPageScripts === 'function') {
                 $('#viewUserFullName').text((user.first_name || '') + ' ' + (user.last_name || ''));
                 $('#viewUserId').text(user.user_id || '-');
                 $('#viewUserEmail').text(user.email || '-');
+                $('#viewUserExternalId').text(user.external_user_id || '-');
                 $('#viewUserType').text(user.user_type_name || 'Subscriber');
                 $('#viewUserHourBalance').text(`${user.hour_balance || 0} hrs`);
 
@@ -1110,20 +1103,10 @@ if (typeof window.initPageScripts === 'function') {
             // DELETE USER - Using Modal
             // ====================================
             $(document).off('click', '.delete-user-btn').on('click', '.delete-user-btn', function () {
-                const userId = $(this).data('id');
-                const userName = $(this).data('name');
-                const balance = parseFloat($(this).data('balance') || 0);
-
-                if (balance > 0) {
-                    showSuccessModal(
-                        'Deletion Blocked',
-                        `Subscriber "${userName}" cannot be deleted because they still have an active balance of ${balance} hrs. Please exhaust or refund the balance first.`
-                    );
-                    return;
-                }
-
-                // Open delete confirmation modal
-                openDeleteModal(userId, userName, 'users');
+                showSuccessModal(
+                    'Deletion Disabled',
+                    'Subscriber deletion is currently disabled. Please update the balance or status instead.'
+                );
             });
 
             // window.openDeleteModal moved to scripts.php
@@ -1221,14 +1204,6 @@ if (typeof window.initPageScripts === 'function') {
                                 style="border-color: #6c757d; color: #6c757d;">
                             <i class="fas fa-pen"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger delete-user-btn" 
-                                data-id="${userData.user_id}" 
-                                data-name="${escapeHtml(userData.first_name + ' ' + userData.last_name)}" 
-                                data-balance="${userData.hour_balance || 0}"
-                                title="Delete"
-                                style="border-color: #dc3545; color: #dc3545;">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </td>
                 </tr>
             `;
@@ -1300,7 +1275,6 @@ if (typeof window.initPageScripts === 'function') {
 
                     // td:eq(6) is Actions - Update button data attributes
                     row.find('.edit-staff-btn').data('id', userData.user_id).data('user', userData);
-                    row.find('.delete-staff-btn').data('id', userData.user_id).data('name', `${userData.first_name} ${userData.last_name}`);
                 });
 
                 console.log('Staff row(s) updated successfully.');
@@ -1338,10 +1312,6 @@ if (typeof window.initPageScripts === 'function') {
 
                     // Update button data attributes
                     row.find('.edit-user-btn').data('id', userData.user_id).data('user', userData);
-                    row.find('.delete-user-btn')
-                        .data('id', userData.user_id)
-                        .data('name', `${userData.first_name} ${userData.last_name}`)
-                        .data('balance', userData.hour_balance || 0);
 
                     console.log('User row updated successfully.');
                 }
@@ -1606,10 +1576,10 @@ if (typeof window.initPageScripts === 'function') {
                 // Collect data based on entity type
                 if (entity === 'users') {
                     formData = {
+                        external_user_id: $('#userStudentId').val().trim(),
                         first_name: $('#userFirstName').val().trim(),
                         last_name: $('#userLastName').val().trim(),
                         email: $('#userEmail').val().trim(),
-                        password: $('#userPassword').val(),
                         user_type_id: $('#userTypeId').val(),
                         hour_balance: $('#userHourBalance').val() || 0
                     };
@@ -1663,23 +1633,41 @@ if (typeof window.initPageScripts === 'function') {
                     hasErrors = true;
                 }
 
-                if (action === 'add' && !formData.password) {
-                    errors.password = 'Password is required';
-                    hasErrors = true;
-                } else if (action === 'add' && formData.password && formData.password.length < 8) {
-                    errors.password = 'Password must be at least 8 characters';
+                if (entity === 'users' && !formData.external_user_id) {
+                        errors.external_user_id = 'Subscriber ID is required';
                     hasErrors = true;
                 }
 
-                if (!formData.user_type_id) {
+                if (entity === 'users') {
+                    if (!formData.first_name) {
+                        errors.first_name = 'Please load the subscriber record first';
+                        hasErrors = true;
+                    }
+                    if (!formData.last_name) {
+                        errors.last_name = 'Please load the subscriber record first';
+                        hasErrors = true;
+                    }
+                    if (!formData.email) {
+                        errors.email = 'Please load the subscriber record first';
+                        hasErrors = true;
+                    }
+                } else if (!formData.user_type_id) {
                     errors.user_type_id = 'Role/Type is required';
                     hasErrors = true;
                 }
 
-                // Check for duplicate names (client-side validation)
-                if (action === 'add' && formData.first_name && formData.last_name) {
+                // Check for duplicate records
+                if (action === 'add' && entity === 'users' && formData.external_user_id) {
+                    const existingStudentIds = (allUsersData || [])
+                        .map(user => (user.external_user_id || '').toLowerCase())
+                        .filter(Boolean);
+
+                    if (existingStudentIds.includes(formData.external_user_id.toLowerCase())) {
+                        errors.external_user_id = 'A subscriber with this ID already exists';
+                        hasErrors = true;
+                    }
+                } else if (action === 'add' && formData.first_name && formData.last_name) {
                     const fullName = `${formData.first_name} ${formData.last_name}`.toLowerCase();
-                    // Check against visible table rows (simple check)
                     const tableId = entity === 'users' ? '#userTableBody' : '#staffTableBody';
                     const existingUsers = $(tableId + ' tr').map(function () {
                         const nameText = $(this).find('td:nth-child(2) strong').text().toLowerCase();
@@ -1710,7 +1698,7 @@ if (typeof window.initPageScripts === 'function') {
                 const roleName = $('.static-role-text').length && $('.static-role-text').is(':visible')
                     ? $('.static-role-text').val()
                     : (entity === 'users'
-                        ? ($('#userTypeId option:selected').text() || 'N/A')
+                        ? 'Subscriber'
                         : ($('#attendantUserTypeId option:selected').text() || 'N/A'));
 
                 let summaryHtml = `
@@ -1730,6 +1718,10 @@ if (typeof window.initPageScripts === 'function') {
 
                 if (entity === 'users') {
                     summaryHtml += `
+                    <div class="row">
+                        <div class="col-md-6"><strong>Subscriber ID:</strong></div>
+                        <div class="col-md-6">${escapeHtml(formData.external_user_id || '')}</div>
+                    </div>
                     <div class="row">
                         <div class="col-md-6"><strong>Hour Balance:</strong></div>
                         <div class="col-md-6">${formData.hour_balance || 0} hrs</div>
@@ -2001,6 +1993,117 @@ if (typeof window.initPageScripts === 'function') {
                 }
             }
 
+            function setSubscriberManualEntryMode() {
+                $('#userStudentId').prop('readonly', false);
+                $('#userFirstName').prop('readonly', false);
+                $('#userLastName').prop('readonly', false);
+                $('#userEmail').prop('readonly', false);
+            }
+
+            function lockSubscriberIdentityFields() {
+                $('#userStudentId').prop('readonly', true);
+                $('#userFirstName').prop('readonly', true);
+                $('#userLastName').prop('readonly', true);
+                $('#userEmail').prop('readonly', true);
+            }
+
+            function populateSubscriberFieldsFromMis(student) {
+                const hasIdentity = !!(student && (student.student_id || student.external_user_id || student.first_name || student.last_name || student.email));
+
+                $('#userStudentId').closest('.mb-3').find('.mis-department-note').remove();
+                $('#userStudentId, #userFirstName, #userLastName, #userEmail').removeClass('is-valid');
+
+                if (!hasIdentity) {
+                    setSubscriberManualEntryMode();
+                    $('#userStudentId').val('');
+                    $('#userFirstName').val('');
+                    $('#userLastName').val('');
+                    $('#userEmail').val('');
+                    return false;
+                }
+
+                $('#userStudentId').val(student.student_id || student.external_user_id || '');
+                $('#userFirstName').val(student.first_name || '');
+                $('#userLastName').val(student.last_name || '');
+                $('#userEmail').val(student.email || '');
+                $('#userTypeId').val(1);
+                lockSubscriberIdentityFields();
+
+                if (student.department_name) {
+                    $('#userStudentId').closest('.mb-3').append(
+                        `<small class="text-muted d-block mt-1 mis-department-note">Department: ${escapeHtml(student.department_name)}</small>`
+                    );
+                }
+
+                return true;
+            }
+
+            function clearSubscriberLookupState() {
+                $('#userStudentId').val('').prop('readonly', false);
+                $('#userFirstName').val('').prop('readonly', false);
+                $('#userLastName').val('').prop('readonly', false);
+                $('#userEmail').val('').prop('readonly', false);
+                $('#userStudentId').closest('.mb-3').find('.mis-department-note').remove();
+                $('#userStudentId, #userFirstName, #userLastName, #userEmail').removeClass('is-valid');
+            }
+
+            function lookupSubscriberFromMis(studentId) {
+                const cleanStudentId = (studentId || '').trim();
+                if (!cleanStudentId) {
+                    showSuccessModal('Missing Subscriber ID', 'Please enter a subscriber ID first.');
+                    return;
+                }
+
+                const lookupBtn = $('#lookupStudentBtn');
+                const originalText = lookupBtn.html();
+                lookupBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Loading...');
+
+                $.ajax({
+                    url: `${baseUrl}users/lookupStudent`,
+                    method: 'GET',
+                    data: { student_id: cleanStudentId },
+                    success: function (response) {
+                        console.log('MIS lookup response:', response);
+                        if (response.success && response.data) {
+                            const populated = populateSubscriberFieldsFromMis(response.data);
+                            if (populated) {
+                                $('#userStudentId').addClass('is-valid');
+                                if (typeof loadUsers === 'function') {
+                                    loadUsers();
+                                }
+                            } else {
+                                showSuccessModal('Lookup Complete', 'No matching record was returned. Use Add Guest to create a manual account.');
+                            }
+                        } else if (response.allow_manual) {
+                            showSuccessModal('No Record Found', response.message || 'No matching record was returned. Use Add Guest to create a manual account.');
+                        } else {
+                            showSuccessModal('Lookup Failed', response.message || 'Unable to load the subscriber record.');
+                        }
+                    },
+                    error: function (xhr) {
+                        const message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : 'Unable to load the subscriber record.';
+                        showSuccessModal('Lookup Failed', message);
+                    },
+                    complete: function () {
+                        lookupBtn.prop('disabled', false).html(originalText);
+                    }
+                });
+            }
+
+            $('#lookupStudentBtn').off('click.users').on('click.users', function (e) {
+                e.preventDefault();
+                lookupSubscriberFromMis($('#userStudentId').val());
+            });
+
+            $(document).off('keypress.usersLookup', '#userStudentId').on('keypress.usersLookup', '#userStudentId', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    lookupSubscriberFromMis($(this).val());
+                }
+            });
+
             // Open CRUD Modal
             function openCrudModal(action, entity, data = null, forceTypeId = null) {
                 // Reset form
@@ -2023,22 +2126,15 @@ if (typeof window.initPageScripts === 'function') {
                     title = action === 'add' ? 'Add New Subscriber' : 'Edit Subscriber';
                     $('.entity-fields').hide(); // Hide all entity fields
                     $('.fields-users').show(); // Show only user fields
-
-                    // Handle password required state
-                    if (action === 'add') {
-                        $('.password-field .add-only').show();
-                        $('.password-field .edit-only').hide();
-                    } else {
-                        $('.password-field .add-only').hide();
-                        $('.password-field .edit-only').show();
-                    }
+                    $('.password-field').hide();
 
                     if (action === 'edit' && data) {
-                        $('#userFirstName').val(data.first_name);
-                        $('#userLastName').val(data.last_name);
-                        $('#userEmail').val(data.email);
+                        $('#userStudentId').val(data.external_user_id || '').prop('readonly', true);
+                        $('#userFirstName').val(data.first_name).prop('readonly', true);
+                        $('#userLastName').val(data.last_name).prop('readonly', true);
+                        $('#userEmail').val(data.email).prop('readonly', true);
                         $('#userHourBalance').val(data.hour_balance || 0);
-                        $('#userTypeId').val(1); // Subscriber
+                        $('#userTypeId').val(1);
 
                         if (data.status === 'suspended') {
                             $('#userSuspendAccount').prop('checked', true);
@@ -2049,40 +2145,23 @@ if (typeof window.initPageScripts === 'function') {
                         $('#userFirstName').val('');
                         $('#userLastName').val('');
                         $('#userEmail').val('');
+                        $('#userStudentId').val('').prop('readonly', false);
+                        $('#userFirstName').prop('readonly', true);
+                        $('#userLastName').prop('readonly', true);
+                        $('#userEmail').prop('readonly', true);
                         $('#userHourBalance').val(0);
-                        $('#userTypeId').val(1); // Default to Subscriber
-                        $('#userUserTypeId').val(1); // Also update if different ID used
+                        $('#userTypeId').val(1);
                         $('#userSuspendAccount').prop('checked', false);
                     }
 
-                    // Force User Type to Subscriber (ID 1) and show static text
-                    const subscriberTypeId = 1;
-                    $('#userTypeId').val(subscriberTypeId).hide();
-                    $('#userUserTypeId').val(subscriberTypeId).hide(); // Handle potential ID variance
-
-                    // Find role name dynamically or default
-                    let roleName = 'Subscriber';
-                    if (typeof userTypes !== 'undefined' && userTypes.length > 0) {
-                        const subType = userTypes.find(t => t.user_type_id == subscriberTypeId);
-                        if (subType) roleName = subType.user_type_name;
-                    }
-
-                    // Create static input
-                    const staticRoleHtml = `<input type="text" class="form-control static-role-text" value="${roleName}" readonly style="background-color: #e9ecef;">`;
-
-                    // Remove existing if any (safety)
-                    $('#userTypeId').closest('.mb-3').find('.static-role-text').remove();
-
-                    const $staticInput = $(staticRoleHtml);
-                    $staticInput.addClass('form-control-integrity-locked');
-                    $('#userTypeId').after($staticInput);
-
-                    // Show Warning Banner
+                    $('#userTypeId').val(1);
+                    $('#userTypeId').prop('disabled', true);
                     $('#staticRoleWarning').show();
                 } else {
                     // Staff (Admins or Attendants)
                     $('.entity-fields').hide(); // Hide all entity fields
                     $('.fields-attendants').show(); // Show only attendant fields
+                    $('.password-field').show();
 
                     // Populate Role Dropdown (hidden if static)
                     const roleOptions = '<option value="">Select Role</option>' +
@@ -2117,13 +2196,15 @@ if (typeof window.initPageScripts === 'function') {
                     }
 
                     // Set Title explicitly based on Type
-                    if (typeId == 3) { // Admin
-                        title = action === 'add' ? 'Add Administrator' : 'Edit Administrator';
-                    } else if (typeId == 2) { // Attendant
-                        title = action === 'add' ? 'Add Attendant' : 'Edit Attendant';
-                    } else {
-                        title = action === 'add' ? 'Add Staff Member' : 'Edit Staff Member';
-                    }
+                      if (typeId == 3) { // Admin
+                          title = action === 'add' ? 'Add Administrator' : 'Edit Administrator';
+                      } else if (typeId == 2) { // Attendant
+                          title = action === 'add' ? 'Add Attendant' : 'Edit Attendant';
+                      } else if (typeId == 4) { // Guest
+                          title = action === 'add' ? 'Add Guest' : 'Edit Guest';
+                      } else {
+                          title = action === 'add' ? 'Add Staff Member' : 'Edit Staff Member';
+                      }
 
                     // Handle Static User Type Logic (Text Box vs Dropdown)
                     if ($('#attendantUserTypeId').length) {
@@ -2136,7 +2217,7 @@ if (typeof window.initPageScripts === 'function') {
                             // STATIC MODE: Hide dropdown, show readonly text
                             $('#attendantUserTypeId').hide().val(typeId); // Ensure value is set
 
-                            const roleName = typeId == 3 ? 'Administrator' : (typeId == 2 ? 'Parking Attendant' : 'Staff');
+                            const roleName = typeId == 3 ? 'Administrator' : (typeId == 2 ? 'Parking Attendant' : (typeId == 4 ? 'Guest' : 'Staff'));
                             const staticRoleHtml = `<input type="text" class="form-control static-role-text" value="${roleName}" readonly style="background-color: #e9ecef;">`;
 
                             const $staticInput = $(staticRoleHtml);
@@ -2203,6 +2284,7 @@ if (typeof window.initPageScripts === 'function') {
                 // Clear stored data
                 delete window.pendingCrudFormData;
                 delete window.pendingCrudAction;
+                clearSubscriberLookupState();
 
                 // Remove any dynamically added hidden inputs for user_type_id
                 $('#hiddenUserTypeId').remove();
@@ -2212,6 +2294,7 @@ if (typeof window.initPageScripts === 'function') {
                 $('#attendantUserTypeId').prop('disabled', false).show();
                 // Remove any static role display
                 $('.static-role-text').remove();
+                $('.password-field').show();
                 $('#userUserTypeId').closest('.mb-3').next('.form-control.bg-light').remove();
                 $('#attendantUserTypeId').closest('.mb-3').next('.form-control.bg-light').remove();
             });
@@ -3050,10 +3133,15 @@ if (typeof window.initPageScripts === 'function') {
             });
 
             // Add Attendant Button
-            $('#addAttendantBtn').on('click', function (e) {
-                e.preventDefault();
-                openCrudModal('add', 'attendants', null, 2); // 2 = Attendant
-            });
+              $('#addAttendantBtn').on('click', function (e) {
+                  e.preventDefault();
+                  openCrudModal('add', 'attendants', null, 2); // 2 = Attendant
+              });
+
+              $('#addGuestBtn').on('click', function (e) {
+                  e.preventDefault();
+                  openCrudModal('add', 'attendants', null, 4); // 4 = Guest
+              });
 
             // Add Subscriber Button
             $('#addSubscriberBtn').on('click', function (e) {
