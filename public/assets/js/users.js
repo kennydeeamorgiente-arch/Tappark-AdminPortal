@@ -407,6 +407,106 @@ if (typeof window.initPageScripts === 'function') {
                 window.location.href = exportUrl;
             });
 
+            // Open bulk import modal
+            $('#importUsersBtn').off('click').on('click', function () {
+                $('#importUsersFile').val('');
+                $('#importUsersSummary').addClass('d-none').html('');
+
+                const modalEl = document.getElementById('importUsersModal');
+                if (!modalEl) {
+                    showSuccessModal('Import Error', 'Import modal could not be opened.');
+                    return;
+                }
+
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modal.show();
+            });
+
+            $('#downloadImportTemplateBtn').off('click').on('click', function () {
+                window.location.href = baseUrl + 'users/importTemplate';
+            });
+
+            $('#submitImportUsersBtn').off('click').on('click', function () {
+                const fileInput = $('#importUsersFile')[0];
+                const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+                if (!file) {
+                    showSuccessModal('Missing File', 'Please choose a CSV file before importing.');
+                    return;
+                }
+
+                const fileName = (file.name || '').toLowerCase();
+                if (!fileName.endsWith('.csv')) {
+                    showSuccessModal('Invalid File', 'Please upload a CSV file.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('import_file', file);
+
+                const $btn = $('#submitImportUsersBtn');
+                const originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Importing...');
+
+                $.ajax({
+                    url: `${baseUrl}users/import`,
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            const results = response.results || {};
+                            const summary = `Created: ${results.created || 0}, Updated: ${results.updated || 0}, Skipped: ${results.skipped || 0}`;
+
+                            $('#importUsersSummary')
+                                .removeClass('d-none')
+                                .html(`<strong>Import completed.</strong> ${summary}`);
+
+                            showSuccessModal('Import Successful', response.message || summary);
+
+                            const modalEl = document.getElementById('importUsersModal');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) {
+                                modal.hide();
+                            }
+
+                            if (typeof loadUsers === 'function') {
+                                loadUsers();
+                            }
+                        } else {
+                            const message = response.message || 'Import failed.';
+                            $('#importUsersSummary')
+                                .removeClass('d-none')
+                                .html(`<strong>Import failed.</strong> ${message}`);
+                            showSuccessModal('Import Failed', message);
+                        }
+                    },
+                    error: function (xhr) {
+                        const message = xhr.responseJSON && xhr.responseJSON.message
+                            ? xhr.responseJSON.message
+                            : 'Import failed. Please try again.';
+
+                        $('#importUsersSummary')
+                            .removeClass('d-none')
+                            .html(`<strong>Import failed.</strong> ${message}`);
+
+                        showSuccessModal('Import Failed', message);
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false).html(originalHtml);
+                    }
+                });
+            });
+
+            $('#importUsersModal').off('hidden.bs.modal.usersImport').on('hidden.bs.modal.usersImport', function () {
+                $('#importUsersFile').val('');
+                $('#importUsersSummary').addClass('d-none').html('');
+            });
+
             // Build export parameters from current filters
             function buildExportParams() {
                 const params = [];

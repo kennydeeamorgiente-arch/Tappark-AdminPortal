@@ -157,6 +157,9 @@
                                 <option value="50" <?= $globalPerPage == 50 ? 'selected' : '' ?>>50</option>
                                 <option value="100" <?= $globalPerPage == 100 ? 'selected' : '' ?>>100</option>
                             </select>
+                            <button class="btn btn-outline-secondary btn-sm" id="importUsersBtn">
+                                <i class="fas fa-file-import me-2"></i>Import CSV
+                            </button>
                             <button class="btn btn-success btn-sm" id="exportUsersBtn">
                                 <i class="fas fa-file-excel me-2"></i>Export to CSV
                             </button>
@@ -383,6 +386,41 @@
                         </nav>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Import Modal -->
+<div class="modal fade" id="importUsersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #800000 0%, #990000 100%);">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-file-import me-2"></i>
+                    Bulk Import Users
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light border small">
+                    <strong>Format:</strong> CSV only for now. Use the template to keep column names consistent.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">CSV File</label>
+                    <input type="file" class="form-control" id="importUsersFile" accept=".csv,text/csv">
+                    <div class="form-text">Columns supported: external_user_id, first_name, last_name, email, user_type_id or role, hour_balance, status, password, assigned_area_id.</div>
+                </div>
+                <div id="importUsersSummary" class="small text-muted d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="downloadImportTemplateBtn">
+                    <i class="fas fa-download me-1"></i>Download Template
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-maroon" id="submitImportUsersBtn">
+                    <i class="fas fa-upload me-1"></i>Import
+                </button>
             </div>
         </div>
     </div>

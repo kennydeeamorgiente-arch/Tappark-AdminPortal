@@ -567,6 +567,128 @@ class Users extends BaseController
     }
 
     /**
+     * Download a CSV template for bulk user import.
+     */
+    public function importTemplate()
+    {
+        $filename = 'Users_Import_Template_' . date('Y-m-d_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, [
+            'external_user_id',
+            'first_name',
+            'last_name',
+            'email',
+            'user_type_id',
+            'hour_balance',
+            'status',
+            'password',
+            'assigned_area_id'
+        ]);
+
+        fputcsv($output, ['20231234', 'Juan', 'Dela Cruz', 'juan.delacruz@foundationu.com', '1', '0', 'active', '', '']);
+        fputcsv($output, ['A-1001', 'Maria', 'Santos', 'maria.santos@foundationu.com', '2', '0', 'active', '', '']);
+        fputcsv($output, ['ADM-001', 'Ana', 'Reyes', 'ana.reyes@foundationu.com', '3', '0', 'active', '', '']);
+
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Bulk import users from a CSV file.
+     */
+    public function import()
+    {
+        $file = $this->request->getFile('import_file');
+
+        if (!$file || !$file->isValid()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Please upload a valid CSV file.'
+            ])->setStatusCode(400);
+        }
+
+        $extension = strtolower((string) $file->getClientExtension());
+        if ($extension !== 'csv') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Only CSV files are supported for now. Please save the sheet as CSV and try again.'
+            ])->setStatusCode(400);
+        }
+
+        $handle = fopen($file->getTempName(), 'r');
+        if ($handle === false) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Unable to read the uploaded file.'
+            ])->setStatusCode(500);
+        }
+
+        $headerRow = fgetcsv($handle);
+        if ($headerRow === false || empty($headerRow)) {
+            fclose($handle);
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'The CSV file is empty.'
+            ])->setStatusCode(400);
+        }
+
+        $headers = $this->normalizeImportHeaders($headerRow);
+        $results = [
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'errors' => []
+        ];
+
+        $rowNumber = 1;
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNumber++;
+
+            if ($row === [null] || empty(array_filter($row, static fn ($value) => trim((string) $value) !== ''))) {
+                continue;
+            }
+
+            $record = $this->mapImportRow($headers, $row);
+            $processed = $this->processImportedUserRow($record, $rowNumber);
+
+            if ($processed['success']) {
+                $results[$processed['action']]++;
+                continue;
+            }
+
+            $results['skipped']++;
+            $results['errors'][] = [
+                'row' => $rowNumber,
+                'message' => $processed['message']
+            ];
+        }
+
+        fclose($handle);
+
+        $message = sprintf(
+            'Import complete. %d created, %d updated, %d skipped.',
+            $results['created'],
+            $results['updated'],
+            $results['skipped']
+        );
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => $message,
+            'results' => $results,
+            'stats' => $this->userModel->getUserStats()
+        ]);
+    }
+
+    /**
      * ============================================================================
      * WALK-IN GUESTS MANAGEMENT METHODS
      * ============================================================================
@@ -1090,10 +1212,8 @@ class Users extends BaseController
         $email = trim((string) ($person['email'] ?? $person['email_address'] ?? $person['school_email'] ?? $person['student_email'] ?? $person['employee_email'] ?? ''));
         $department = trim((string) ($person['department'] ?? $person['department_name'] ?? $person['program'] ?? $person['course'] ?? $person['division'] ?? ''));
 
-        if ($email === '' && $identifier !== '') {
-            $safeIdentifier = preg_replace('/[^a-zA-Z0-9]+/', '.', $identifier);
-            $safeIdentifier = trim((string) $safeIdentifier, '.');
-            $email = strtolower('mis.' . $identityType . '.' . $safeIdentifier . '@tappark.local');
+        if ($email === '') {
+            $email = $this->buildFoundationEmail($firstName, $lastName, $identifier);
         }
 
         return [
@@ -1333,9 +1453,11 @@ class Users extends BaseController
         }
 
         if ($payload['email'] === '') {
-            $safeIdentifier = preg_replace('/[^a-zA-Z0-9]+/', '.', $externalUserId);
-            $safeIdentifier = trim((string) $safeIdentifier, '.');
-            $payload['email'] = strtolower('subscriber.' . $safeIdentifier . '@tappark.local');
+            $payload['email'] = $this->buildFoundationEmail(
+                (string) ($payload['first_name'] ?? ''),
+                (string) ($payload['last_name'] ?? ''),
+                $externalUserId
+            );
         }
 
         $payload['password'] = $this->generateTemporaryPassword($externalUserId);
@@ -1357,6 +1479,194 @@ class Users extends BaseController
         }
 
         return array_keys($array) !== range(0, count($array) - 1);
+    }
+
+    /**
+     * Build a Foundation University email address from a person's name.
+     */
+    private function buildFoundationEmail(string $firstName, string $lastName, string $fallback = ''): string
+    {
+        $firstName = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', $firstName));
+        $lastName = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', $lastName));
+
+        $localPart = $firstName;
+        if ($lastName !== '') {
+            $localPart .= ($localPart !== '' ? '.' : '') . $lastName;
+        }
+
+        if ($localPart === '') {
+            $localPart = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', $fallback));
+        }
+
+        return $localPart !== ''
+            ? $localPart . '@foundationu.com'
+            : '';
+    }
+
+    /**
+     * Normalize CSV headers into snake_case keys.
+     */
+    private function normalizeImportHeaders(array $headers): array
+    {
+        return array_map(static function ($header) {
+            $header = (string) $header;
+            $header = preg_replace('/^\xEF\xBB\xBF/', '', $header);
+            $header = strtolower(trim($header));
+            $header = preg_replace('/[^a-z0-9]+/', '_', $header);
+            return trim((string) $header, '_');
+        }, $headers);
+    }
+
+    /**
+     * Map a CSV row to an associative array.
+     */
+    private function mapImportRow(array $headers, array $row): array
+    {
+        $mapped = [];
+
+        foreach ($headers as $index => $header) {
+            if ($header === '') {
+                continue;
+            }
+
+            $mapped[$header] = trim((string) ($row[$index] ?? ''));
+        }
+
+        return $mapped;
+    }
+
+    /**
+     * Process a single imported user row.
+     */
+    private function processImportedUserRow(array $record, int $rowNumber): array
+    {
+        $externalUserId = trim((string) ($record['external_user_id'] ?? $record['student_id'] ?? $record['employee_id'] ?? ''));
+        $firstName = trim((string) ($record['first_name'] ?? ''));
+        $lastName = trim((string) ($record['last_name'] ?? ''));
+        $email = trim((string) ($record['email'] ?? ''));
+        $status = trim((string) ($record['status'] ?? 'active')) ?: 'active';
+        $hourBalance = (int) ($record['hour_balance'] ?? 0);
+        $assignedAreaId = trim((string) ($record['assigned_area_id'] ?? ''));
+        $password = trim((string) ($record['password'] ?? ''));
+        $userTypeId = $this->resolveImportUserTypeId($record);
+
+        if ($firstName === '' || $lastName === '') {
+            return [
+                'success' => false,
+                'message' => 'Row ' . $rowNumber . ': first_name and last_name are required.'
+            ];
+        }
+
+        if ($userTypeId === null) {
+            return [
+                'success' => false,
+                'message' => 'Row ' . $rowNumber . ': user_type_id or role is required.'
+            ];
+        }
+
+        if ($email === '') {
+            $email = $this->buildFoundationEmail($firstName, $lastName, $externalUserId);
+        }
+
+        if ($email === '') {
+            return [
+                'success' => false,
+                'message' => 'Row ' . $rowNumber . ': could not generate an email address.'
+            ];
+        }
+
+        $existingUser = null;
+        if ($externalUserId !== '') {
+            $existingUser = $this->userModel->getUserByExternalId($externalUserId);
+        }
+
+        if (!$existingUser) {
+            $existingUser = $this->userModel->where('email', $email)->first();
+        }
+
+        $payload = [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $email,
+            'user_type_id' => $userTypeId,
+            'hour_balance' => $hourBalance,
+            'status' => in_array($status, ['active', 'inactive', 'suspended'], true) ? $status : 'active',
+        ];
+
+        if ($externalUserId !== '') {
+            $payload['external_user_id'] = $externalUserId;
+        } elseif ($existingUser && !empty($existingUser['external_user_id'])) {
+            $payload['external_user_id'] = $existingUser['external_user_id'];
+        }
+
+        if ($assignedAreaId !== '') {
+            $payload['assigned_area_id'] = (int) $assignedAreaId;
+        }
+
+        if ($existingUser) {
+            if ($password !== '') {
+                $payload['password'] = $password;
+            }
+
+            $updated = $this->userModel->updateUser($existingUser['user_id'], $payload);
+            if (!$updated) {
+                return [
+                    'success' => false,
+                    'message' => 'Row ' . $rowNumber . ': failed to update existing user.'
+                ];
+            }
+
+            log_update('User', $existingUser['user_id'], $firstName . ' ' . $lastName);
+
+            return [
+                'success' => true,
+                'action' => 'updated'
+            ];
+        }
+
+        if ($password === '') {
+            $password = $this->generateTemporaryPassword($externalUserId !== '' ? $externalUserId : $email);
+        }
+
+        $payload['password'] = $password;
+
+        $userId = $this->userModel->createUser($payload);
+        if (!$userId) {
+            return [
+                'success' => false,
+                'message' => 'Row ' . $rowNumber . ': failed to create user.'
+            ];
+        }
+
+        log_create('User', $userId, $firstName . ' ' . $lastName);
+
+        return [
+            'success' => true,
+            'action' => 'created'
+        ];
+    }
+
+    /**
+     * Resolve a user type from imported data.
+     */
+    private function resolveImportUserTypeId(array $record): ?int
+    {
+        $userTypeId = trim((string) ($record['user_type_id'] ?? ''));
+        if ($userTypeId !== '' && ctype_digit($userTypeId)) {
+            return (int) $userTypeId;
+        }
+
+        $role = strtolower(trim((string) ($record['role'] ?? $record['user_type_name'] ?? '')));
+        if ($role === '') {
+            return null;
+        }
+
+        return match ($role) {
+            'subscriber', 'subscribers', 'student', 'students', 'user', 'users' => UserModel::ROLE_SUBSCRIBER,
+            'attendant', 'attendants', 'staff' => UserModel::ROLE_ATTENDANT,
+            'admin', 'administrator', 'administrators' => UserModel::ROLE_ADMIN,
+            default => null,
+        };
     }
 
     // ====================================
