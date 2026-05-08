@@ -2504,11 +2504,13 @@ if (typeof window.initPageScripts === 'function') {
                 const firstName = String(user.first_name || '').trim();
                 const lastName = String(user.last_name || '').trim();
                 const email = String(user.email || '').trim();
+                const password = String(user.password || user.temp_password || user.generated_password || '').trim();
 
                 $('#attendantEmployeeSearch').val([firstName, lastName].filter(Boolean).join(' ')).prop('readonly', true);
                 $('#attendantFirstName').val(firstName).prop('readonly', true);
                 $('#attendantLastName').val(lastName).prop('readonly', true);
                 $('#attendantEmail').val(email).prop('readonly', true);
+                $('#attendantPassword').val(password);
 
                 hideEmployeeSuggestions();
             }
@@ -2587,13 +2589,15 @@ if (typeof window.initPageScripts === 'function') {
                             const fullName = String(item.full_name || [firstName, lastName].filter(Boolean).join(' ')).trim();
                             const externalId = String(item.external_user_id || item.student_id || '').trim();
                             const email = String(item.email || '').trim();
+                            const password = String(item.password || item.temp_password || item.generated_password || '').trim();
 
                             return `
                                 <button type="button"
                                         class="list-group-item list-group-item-action employee-suggestion-item"
                                         data-first-name="${escapeHtml(firstName)}"
                                         data-last-name="${escapeHtml(lastName)}"
-                                        data-email="${escapeHtml(email)}">
+                                        data-email="${escapeHtml(email)}"
+                                        data-password="${escapeHtml(password)}">
                                     <div class="employee-suggestion-name">${escapeHtml(fullName || externalId)}</div>
                                     <div class="employee-suggestion-meta">
                                         ${externalId ? escapeHtml(externalId) : ''}
@@ -2711,6 +2715,7 @@ if (typeof window.initPageScripts === 'function') {
                 $('#attendantFirstName').val('').prop('readonly', false);
                 $('#attendantLastName').val('').prop('readonly', false);
                 $('#attendantEmail').val('').prop('readonly', false);
+                $('#attendantPassword').val('');
                 $('#attendantEmployeeSuggestions').addClass('d-none').empty();
             }
 
@@ -2764,7 +2769,8 @@ if (typeof window.initPageScripts === 'function') {
                 populateEmployeeSuggestion({
                     first_name: $(this).data('first-name'),
                     last_name: $(this).data('last-name'),
-                    email: $(this).data('email')
+                    email: $(this).data('email'),
+                    password: $(this).data('password')
                 });
             });
 
@@ -2838,6 +2844,7 @@ if (typeof window.initPageScripts === 'function') {
                     $('.password-field').show();
                     clearEmployeeLookupState();
                     $('#attendantEmployeeSearch, #attendantFirstName, #attendantLastName, #attendantEmail').prop('readonly', false);
+                    $('#attendantPassword').val('');
 
                     // Populate Role Dropdown (hidden if static)
                     const roleOptions = '<option value="">Select Role</option>' +
