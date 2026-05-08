@@ -270,6 +270,11 @@ class UserModel extends Model
         }
         unset($data['hour_balance']);
 
+        if (empty($data['password'])) {
+            $seed = trim((string) ($data['external_user_id'] ?? $data['email'] ?? $data['first_name'] ?? 'user'));
+            $data['password'] = 'TapPark-' . substr(hash('sha256', $seed . '|' . microtime(true) . '|' . bin2hex(random_bytes(6))), 0, 12);
+        }
+
         // Hash password if provided
         if (!empty($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);

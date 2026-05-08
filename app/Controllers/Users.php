@@ -345,6 +345,7 @@ class Users extends BaseController
                 $existingUser = $this->userModel->where('email', $payload['email'])->first();
             }
 
+            $temporaryPassword = null;
             if ($existingUser) {
                 unset($payload['password']);
                 $result = $this->userModel->updateUser($existingUser['user_id'], $payload);
@@ -352,6 +353,12 @@ class Users extends BaseController
                 $message = 'Subscriber synced successfully';
                 $logAction = 'User Sync';
             } else {
+                $temporaryPassword = '';
+                if (empty($payload['password'])) {
+                    $temporaryPassword = $this->generateTemporaryPassword($payload['external_user_id']);
+                    $payload['password'] = $temporaryPassword;
+                }
+
                 $result = $this->userModel->createUser($payload);
                 $userId = $result;
                 $message = 'Subscriber created successfully';
@@ -373,7 +380,8 @@ class Users extends BaseController
                     'success' => true,
                     'message' => $message,
                     'data' => $user,
-                    'stats' => $stats
+                    'stats' => $stats,
+                    'generated_password' => $temporaryPassword ?? null
                 ]);
             }
 

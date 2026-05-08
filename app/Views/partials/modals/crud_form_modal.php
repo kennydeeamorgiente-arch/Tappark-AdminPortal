@@ -111,6 +111,7 @@
                                 <input type="email" class="form-control" name="email" id="attendantEmail" autocomplete="off">
                                 <div class="invalid-feedback" id="error-email"></div>
                             </div>
+                            <input type="hidden" name="password" id="attendantPassword">
                             <div class="mb-3">
                                 <label class="form-label">Role <span class="text-danger">*</span></label>
                                 <select class="form-select" name="user_type_id" id="attendantUserTypeId">
