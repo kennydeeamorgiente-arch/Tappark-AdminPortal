@@ -556,28 +556,28 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: #e9ecef;
-    color: #6c757d;
+    background: rgba(128, 0, 0, 0.08);
+    color: #800000;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 1.25rem;
-    border: 3px solid #dee2e6;
+    border: 3px solid rgba(128, 0, 0, 0.22);
     transition: all 0.3s;
 }
 
 .wizard-step.active .wizard-step-circle {
-    background: #0d6efd;
+    background: linear-gradient(135deg, #800000 0%, #990000 100%);
     color: white;
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+    border-color: #800000;
+    box-shadow: 0 0 0 4px rgba(128, 0, 0, 0.2);
 }
 
 .wizard-step.completed .wizard-step-circle {
-    background: #198754;
+    background: linear-gradient(135deg, #800000 0%, #990000 100%);
     color: white;
-    border-color: #198754;
+    border-color: #800000;
     font-size: 0;
     position: relative;
 }
@@ -597,17 +597,17 @@
     margin-top: 0.5rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #6c757d;
+    color: #6c5559;
     text-align: center;
 }
 
 .wizard-step.active .wizard-step-label {
-    color: #0d6efd;
+    color: #800000;
     font-weight: 600;
 }
 
 .wizard-step.completed .wizard-step-label {
-    color: #198754;
+    color: #800000;
 }
 
 .wizard-step-line {
@@ -621,7 +621,30 @@
 }
 
 .wizard-step.completed+.wizard-step-line {
-    background: #198754;
+    background: linear-gradient(135deg, #800000 0%, #990000 100%);
+}
+
+[data-bs-theme="dark"] .wizard-step-circle {
+    background: rgba(255, 102, 102, 0.08);
+    color: #ffb3b3;
+    border-color: rgba(255, 102, 102, 0.24);
+}
+
+[data-bs-theme="dark"] .wizard-step.active .wizard-step-circle,
+[data-bs-theme="dark"] .wizard-step.completed .wizard-step-circle {
+    background: linear-gradient(135deg, #800000 0%, #990000 100%);
+    color: #ffffff;
+    border-color: #990000;
+    box-shadow: 0 0 0 4px rgba(153, 0, 0, 0.28);
+}
+
+[data-bs-theme="dark"] .wizard-step-label {
+    color: #c8a9a9;
+}
+
+[data-bs-theme="dark"] .wizard-step.active .wizard-step-label,
+[data-bs-theme="dark"] .wizard-step.completed .wizard-step-label {
+    color: #ffb3b3;
 }
 
 /* Wizard Content */
@@ -1041,6 +1064,64 @@
     background: transparent !important;
 }
 
+#wizardExitConfirmModal .modal-content {
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.25);
+}
+
+#wizardExitConfirmModal .modal-header {
+    background: linear-gradient(135deg, #800000 0%, #990000 100%) !important;
+    border-bottom: 0;
+}
+
+#wizardExitConfirmModal .modal-body {
+    background: #fffafa;
+    color: #3b2020;
+}
+
+#wizardExitConfirmModal .wizard-exit-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(128, 0, 0, 0.08);
+    border: 2px solid rgba(128, 0, 0, 0.18);
+    color: #800000;
+}
+
+#wizardExitConfirmModal .wizard-exit-icon i {
+    font-size: 2rem;
+}
+
+#wizardExitConfirmModal .modal-body h5 {
+    color: #3b2020;
+    font-weight: 700;
+}
+
+#wizardExitConfirmModal .modal-body .text-muted {
+    color: #6c5559 !important;
+}
+
+#wizardExitConfirmModal .modal-footer {
+    background: #ffffff;
+    border-top: 1px solid rgba(128, 0, 0, 0.12);
+}
+
+#wizardExitConfirmModal .btn-outline-maroon {
+    color: #800000 !important;
+    border-color: #800000 !important;
+}
+
+#wizardExitConfirmModal .btn-outline-maroon:hover {
+    background: #800000 !important;
+    color: #ffffff !important;
+}
+
 /* Dark Mode - Exit Confirmation Modal */
 [data-bs-theme="dark"] #wizardExitConfirmModal .modal-content {
     background: #241b1b !important;
@@ -1052,9 +1133,33 @@
     color: #ead6d6 !important;
 }
 
+[data-bs-theme="dark"] #wizardExitConfirmModal .wizard-exit-icon {
+    background: rgba(255, 102, 102, 0.1);
+    border-color: rgba(255, 102, 102, 0.24);
+    color: #ffb3b3;
+}
+
+[data-bs-theme="dark"] #wizardExitConfirmModal .modal-body h5 {
+    color: #f4dfdf !important;
+}
+
+[data-bs-theme="dark"] #wizardExitConfirmModal .modal-body .text-muted {
+    color: #c8a9a9 !important;
+}
+
 [data-bs-theme="dark"] #wizardExitConfirmModal .modal-footer {
     background: #211818 !important;
     border-top-color: rgba(219, 176, 176, 0.14) !important;
+}
+
+[data-bs-theme="dark"] #wizardExitConfirmModal .btn-outline-maroon {
+    color: #ffb3b3 !important;
+    border-color: #990000 !important;
+}
+
+[data-bs-theme="dark"] #wizardExitConfirmModal .btn-outline-maroon:hover {
+    background: #990000 !important;
+    color: #ffffff !important;
 }
 
 /* Responsive */

@@ -1024,14 +1024,29 @@ if (typeof window.initPageScripts === 'function') {
                 $('#wizardAreaLon').val('');
                 hideWizardLocationPreview();
 
-                // Reset section mode visibility
-                $('#specialVehicleOptions').addClass('d-none');
-                $('#slotBasedFields').removeClass('d-none');
-                $('#capacityOnlyFields').addClass('d-none');
-                $('#wizardSectionRows, #wizardSectionColumns').prop('required', true);
+                resetWizardSectionMode();
 
                 updateTotalSpotsPreview();
                 renderWizardSectionsList();
+            }
+
+            function resetWizardSectionMode() {
+                $('#specialVehicleOptions').addClass('d-none');
+                $('#slotBasedFields').removeClass('d-none');
+                $('#capacityOnlyFields').addClass('d-none');
+                $('input[name="sectionMode"][value="slot_based"]').prop('checked', true);
+                $('input[name="sectionMode"][value="capacity_only"]').prop('checked', false);
+                $('#wizardSectionRows, #wizardSectionColumns').prop('required', true);
+                $('#wizardSectionCapacity, #wizardSectionGridWidth').prop('required', false);
+
+                $('input[name="sectionMode"]').each(function () {
+                    const label = $(`label[for="${$(this).attr('id')}"]`);
+                    if ($(this).is(':checked')) {
+                        label.addClass('active').removeClass('btn-outline-primary').addClass('btn-primary');
+                    } else {
+                        label.removeClass('active').removeClass('btn-primary').addClass('btn-outline-primary');
+                    }
+                });
             }
 
             function populateWizardVehicleTypes() {
@@ -1315,12 +1330,8 @@ if (typeof window.initPageScripts === 'function') {
                 $('#wizardSectionForm')[0].reset();
                 form.classList.remove('was-validated');
                 $('#wizardSectionFloor').val(1);
+                resetWizardSectionMode();
                 updateTotalSpotsPreview();
-
-                // Reset special options visibility
-                if (isSpecialVehicle) {
-                    $('#slotBasedMode').prop('checked', true).trigger('change');
-                }
 
                 showToast('Section added to list!', 'success');
             });
@@ -1574,10 +1585,6 @@ if (typeof window.initPageScripts === 'function') {
 
             function fetchWizardLocationSuggestions(query) {
                 const suggestionsEl = $('#wizardLocationSuggestions');
-                if (!geoapifyKey) {
-                    suggestionsEl.removeClass('show').empty();
-                    return;
-                }
 
                 cancelWizardLocationRequest();
                 wizardLocationAbortController = new AbortController();
@@ -1588,6 +1595,8 @@ if (typeof window.initPageScripts === 'function') {
                     limit: '5',
                     filter: 'countrycode:ph'
                 });
+
+                suggestionsEl.html('<div class="location-autocomplete-empty">Searching locations...</div>').addClass('show');
 
                 fetch(`${baseUrl}api/geoapify/autocomplete?${params.toString()}`, {
                     signal: controller.signal
@@ -1606,7 +1615,7 @@ if (typeof window.initPageScripts === 'function') {
             function renderWizardLocationSuggestions(results) {
                 const suggestionsEl = $('#wizardLocationSuggestions');
                 if (!results.length) {
-                    suggestionsEl.removeClass('show').empty();
+                    suggestionsEl.html('<div class="location-autocomplete-empty">No matching locations found.</div>').addClass('show');
                     return;
                 }
 
@@ -1641,6 +1650,7 @@ if (typeof window.initPageScripts === 'function') {
                 $('#wizardAreaLat').val(lat || '');
                 $('#wizardAreaLon').val(lon || '');
                 $('#wizardLocationSuggestions').removeClass('show').empty();
+                updateWizardLocationPreview(data);
             }
 
             function updateWizardLocationPreview(details) {

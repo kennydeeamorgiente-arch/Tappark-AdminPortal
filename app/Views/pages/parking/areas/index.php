@@ -359,7 +359,7 @@
                             <div class="invalid-feedback">Location is required</div>
                            <!-- <small class="text-muted">Powered by Geoapify – start typing to search and confirm the location.</small> -->
                         </div>
-                        <div class="wizard-location-map d-none" id="wizardLocationMap" aria-label="Parking area map preview"></div>
+                        <div class="wizard-location-map wizard-location-preview d-none" id="wizardLocationMap" aria-label="Parking area map preview"></div>
                         <input type="hidden" id="wizardAreaLat">
                         <input type="hidden" id="wizardAreaLon">
                         <div class="mb-3">
@@ -960,12 +960,14 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center py-4">
-                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <div class="wizard-exit-icon mb-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
                 <h5 class="mb-3">Are you sure you want to exit?</h5>
                 <p class="text-muted mb-0">You have unsaved changes. If you exit now, your progress will be lost.</p>
             </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-maroon" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-maroon" id="confirmExitWizardBtn">
                     <i class="fas fa-sign-out-alt me-1"></i> Yes, Exit
                 </button>
