@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class Login extends BaseController
 {
@@ -37,6 +38,159 @@ class Login extends BaseController
     }
 
     /**
+     * Get the development admin credentials.
+     *
+     * These can be overridden from .env, but always stay development-only.
+     */
+    private function getDevelopmentAdminCredentials(): array
+    {
+        $email = (string) (env('TAPPARK_DEV_ADMIN_EMAIL') ?: env('tappark.devAdminEmail') ?: 'dev.admin@tappark.local');
+        $password = (string) (env('TAPPARK_DEV_ADMIN_PASSWORD') ?: env('tappark.devAdminPassword') ?: 'DevAdmin123!');
+        $firstName = (string) (env('TAPPARK_DEV_ADMIN_FIRST_NAME') ?: env('tappark.devAdminFirstName') ?: 'Dev');
+        $lastName = (string) (env('TAPPARK_DEV_ADMIN_LAST_NAME') ?: env('tappark.devAdminLastName') ?: 'Administrator');
+        $externalId = (string) (env('TAPPARK_DEV_ADMIN_EXTERNAL_ID') ?: env('tappark.devAdminExternalId') ?: 'DEV-ADMIN');
+
+        return [
+            'email' => strtolower(trim($email)),
+            'password' => trim($password),
+            'first_name' => trim($firstName),
+            'last_name' => trim($lastName),
+            'external_user_id' => trim($externalId),
+        ];
+    }
+
+    /**
+     * Allow the dev admin on local development hosts.
+     */
+    private function isDevelopmentAdminAllowed(): bool
+    {
+        if (ENVIRONMENT !== 'production') {
+            return true;
+        }
+
+        $host = strtolower(trim((string) $this->request->getServer('HTTP_HOST')));
+        return $host === 'localhost'
+            || $host === '127.0.0.1'
+            || $host === '::1'
+            || str_contains($host, 'localhost');
+    }
+
+    /**
+     * Create or refresh the local development admin account and return it.
+     */
+    private function getDevelopmentAdminUser(string $email, string $password): ?array
+    {
+        if (!$this->isDevelopmentAdminAllowed()) {
+            return null;
+        }
+
+        $credentials = $this->getDevelopmentAdminCredentials();
+        if (strtolower(trim($email)) !== $credentials['email']) {
+            return null;
+        }
+
+        if (!hash_equals($credentials['password'], (string) $password)) {
+            return null;
+        }
+
+        $payload = [
+            'external_user_id' => $credentials['external_user_id'],
+            'first_name' => $credentials['first_name'],
+            'last_name' => $credentials['last_name'],
+            'email' => $credentials['email'],
+            'password' => $credentials['password'],
+            'user_type_id' => UserModel::ROLE_ADMIN,
+            'status' => 'active',
+            'tokens' => 0,
+            'assigned_area_id' => null,
+        ];
+
+        try {
+            $existing = $this->userModel->where('email', $credentials['email'])->first();
+            if ($existing) {
+                $this->userModel->skipValidation(true);
+                $this->userModel->updateUser($existing['user_id'], $payload);
+
+                $refreshed = $this->userModel->find($existing['user_id']);
+                if ($refreshed) {
+                    return $refreshed;
+                }
+            } else {
+                $this->userModel->skipValidation(true);
+                $userId = $this->userModel->createUser($payload);
+
+                if ($userId) {
+                    $created = $this->userModel->find($userId);
+                    if ($created) {
+                        return $created;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            log_message('warning', 'Development admin seed failed, falling back to synthetic session: ' . $e->getMessage());
+        }
+
+        return [
+            'user_id' => 900000001,
+            'external_user_id' => $credentials['external_user_id'],
+            'first_name' => $credentials['first_name'],
+            'last_name' => $credentials['last_name'],
+            'email' => $credentials['email'],
+            'user_type_id' => UserModel::ROLE_ADMIN,
+            'status' => 'active',
+            'tokens' => 0,
+            'assigned_area_id' => null,
+            'access_level' => UserModel::ROLE_ADMIN,
+            'profile_picture' => null,
+        ];
+    }
+
+    /**
+     * Finalize a successful admin login.
+     */
+    private function finalizeAdminLogin(array $user, ?string $rateLimitKey = null, bool $isDevelopmentAccount = false): ResponseInterface
+    {
+        if (!empty($rateLimitKey)) {
+            cache()->delete($rateLimitKey);
+        }
+
+        $accessLevel = (int) ($user['access_level'] ?? $user['user_type_id'] ?? UserModel::ROLE_ADMIN);
+        $sessionData = [
+            'user_id' => $user['user_id'],
+            'email' => $user['email'],
+            'first_name' => $user['first_name'] ?? '',
+            'last_name' => $user['last_name'] ?? '',
+            'user_type_id' => $user['user_type_id'],
+            'access_level' => $accessLevel,
+            'is_admin' => true,
+            'login_time' => time(),
+            'last_activity' => time()
+        ];
+
+        if (!empty($user['profile_picture'])) {
+            $sessionData['profile_picture'] = $user['profile_picture'];
+        }
+
+        $this->session->set($sessionData);
+
+        if (method_exists($this->userModel, 'updateOnlineStatus')) {
+            $this->userModel->updateOnlineStatus($user['user_id'], true);
+        }
+
+        $userName = ($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '');
+        log_login($user['user_id'], trim($userName));
+
+        $firstName = $user['first_name'] ?? 'Admin';
+        $this->session->setFlashdata('welcome_message', "Welcome back, {$firstName}!");
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => $isDevelopmentAccount ? 'Development admin login successful' : 'Login successful',
+            'redirect' => base_url()
+        ]);
+    }
+
+    /**
      * Process login form submission
      * 
      * Handles:
@@ -56,6 +210,17 @@ class Login extends BaseController
                 'success' => false,
                 'message' => 'Invalid request method'
             ])->setStatusCode(400);
+        }
+
+        // Get validated data
+        $email = $this->request->getPost('email');
+        $password = $this->request->getPost('password');
+
+        if ($this->isDevelopmentAdminAllowed()) {
+            $developmentAdmin = $this->getDevelopmentAdminUser($email, $password);
+            if ($developmentAdmin) {
+                return $this->finalizeAdminLogin($developmentAdmin, null, true);
+            }
         }
 
         // Rate limiting check
@@ -107,10 +272,6 @@ class Login extends BaseController
                 'errors' => $validation->getErrors()
             ])->setStatusCode(422);
         }
-
-        // Get validated data
-        $email = $this->request->getPost('email');
-        $password = $this->request->getPost('password');
 
         // First, check if user exists (regardless of status)
         $user = $this->userModel->where('email', $email)->first();
@@ -206,57 +367,16 @@ class Login extends BaseController
         }
 
         // User exists, is active, and password is correct
-        // Now check if user is admin (user_type_id = 3)
-        // Only users with user_type_id = 3 are allowed to access the admin system
-        if ($user['user_type_id'] != UserModel::ROLE_ADMIN) {
+        // Admin access is derived from the administrator role (access level 3 / user_type_id 3)
+        $accessLevel = (int) ($user['access_level'] ?? $user['user_type_id'] ?? 0);
+        if ($accessLevel !== UserModel::ROLE_ADMIN) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Access denied. Admin privileges required.'
             ])->setStatusCode(403);
         }
 
-        // Clear rate limit counter on successful login
-        cache()->delete($rateLimitKey);
-
-        // Create session data
-        $sessionData = [
-            'user_id' => $user['user_id'],
-            'email' => $user['email'],
-            'first_name' => $user['first_name'] ?? '',
-            'last_name' => $user['last_name'] ?? '',
-            'user_type_id' => $user['user_type_id'],
-            'is_admin' => true,
-            'login_time' => time(),
-            'last_activity' => time()
-        ];
-        
-        // Add profile picture if it exists
-        if (!empty($user['profile_picture'])) {
-            $sessionData['profile_picture'] = $user['profile_picture'];
-        }
-
-        // Set session data
-        $this->session->set($sessionData);
-
-        // Update user online status (if method exists)
-        if (method_exists($this->userModel, 'updateOnlineStatus')) {
-            $this->userModel->updateOnlineStatus($user['user_id'], true);
-        }
-
-        // Log successful login
-        $userName = ($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '');
-        log_login($user['user_id'], trim($userName));
-
-        // Return success response
-        // Redirect to main layout (home page) which will show the dashboard
-        $firstName = $user['first_name'] ?? 'Admin';
-        $this->session->setFlashdata('welcome_message', "Welcome back, {$firstName}!");
-
-        return $this->response->setJSON([
-            'success' => true,
-            'message' => 'Login successful',
-            'redirect' => base_url() // Redirects to '/' which loads main_layout.php
-        ]);
+        return $this->finalizeAdminLogin($user, $rateLimitKey, false);
     }
 
     /**

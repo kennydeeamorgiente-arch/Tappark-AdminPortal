@@ -20,7 +20,7 @@ class UserModel extends Model
         'last_name',
         'first_name',
         'password',
-        'hour_balance',
+        'tokens',
         'user_type_id',
         'assigned_area_id',
         'is_online',
@@ -102,7 +102,7 @@ class UserModel extends Model
     public function getUsersWithFilters($filters = [], $limit = 25, $offset = 0)
     {
         $builder = $this->builder();
-        $builder->select('users.*, types.account_type_name as user_type_name, parking_area.parking_area_name');
+        $builder->select('users.*, users.tokens as hour_balance, types.account_type_name as user_type_name, parking_area.parking_area_name');
         $builder->join('types', 'types.type_id = users.user_type_id', 'left');
         $builder->join('parking_area', 'users.assigned_area_id = parking_area.parking_area_id', 'left');
 
@@ -173,7 +173,7 @@ class UserModel extends Model
     public function getUserById($userId)
     {
         return $this->db->table('users u')
-            ->select('u.*, t.account_type_name as user_type_name, pa.parking_area_name')
+            ->select('u.*, u.tokens as hour_balance, t.account_type_name as user_type_name, pa.parking_area_name')
             ->join('types t', 'u.user_type_id = t.type_id', 'left')
             ->join('parking_area pa', 'u.assigned_area_id = pa.parking_area_id', 'left')
             ->where('u.user_id', $userId)
@@ -187,7 +187,7 @@ class UserModel extends Model
     public function getUserByExternalId($externalUserId)
     {
         return $this->db->table('users u')
-            ->select('u.*, t.account_type_name as user_type_name, pa.parking_area_name')
+            ->select('u.*, u.tokens as hour_balance, t.account_type_name as user_type_name, pa.parking_area_name')
             ->join('types t', 'u.user_type_id = t.type_id', 'left')
             ->join('parking_area pa', 'u.assigned_area_id = pa.parking_area_id', 'left')
             ->where('u.external_user_id', $externalUserId)
@@ -201,7 +201,7 @@ class UserModel extends Model
     public function getAttendantById($userId)
     {
         return $this->db->table('users u')
-            ->select('u.*, t.account_type_name as user_type_name, pa.parking_area_name')
+            ->select('u.*, u.tokens as hour_balance, t.account_type_name as user_type_name, pa.parking_area_name')
             ->join('types t', 'u.user_type_id = t.type_id', 'left')
             ->join('parking_area pa', 'u.assigned_area_id = pa.parking_area_id', 'left')
             ->where('u.user_id', $userId)
@@ -265,6 +265,11 @@ class UserModel extends Model
      */
     public function createUser($data)
     {
+        if (array_key_exists('hour_balance', $data) && !array_key_exists('tokens', $data)) {
+            $data['tokens'] = $data['hour_balance'];
+        }
+        unset($data['hour_balance']);
+
         // Hash password if provided
         if (!empty($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
@@ -285,6 +290,11 @@ class UserModel extends Model
      */
     public function updateUser($userId, $data)
     {
+        if (array_key_exists('hour_balance', $data) && !array_key_exists('tokens', $data)) {
+            $data['tokens'] = $data['hour_balance'];
+        }
+        unset($data['hour_balance']);
+
         // Hash password if provided and not empty
         if (!empty($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
@@ -311,7 +321,7 @@ class UserModel extends Model
     public function getAttendantsWithFilters($filters = [], $limit = 10, $offset = 0)
     {
         $builder = $this->db->table('users u')
-            ->select('u.*, t.account_type_name as user_type_name, pa.parking_area_name')
+            ->select('u.*, u.tokens as hour_balance, t.account_type_name as user_type_name, pa.parking_area_name')
             ->join('types t', 'u.user_type_id = t.type_id', 'left')
             ->join('parking_area pa', 'u.assigned_area_id = pa.parking_area_id', 'left')
             ->whereIn('u.user_type_id', [self::ROLE_ATTENDANT, self::ROLE_ADMIN]) // Include attendants and admins

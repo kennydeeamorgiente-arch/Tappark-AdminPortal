@@ -229,6 +229,40 @@ class Users extends BaseController
     }
 
     /**
+     * Search employees in MIS
+     */
+    public function searchEmployees()
+    {
+        $search = trim((string) ($this->request->getGet('search') ?? ''));
+
+        if ($search === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Search text is required.'
+            ])->setStatusCode(400);
+        }
+
+        $employeeResponse = $this->misApiService->searchEmployees($search);
+        if (empty($employeeResponse['success'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $employeeResponse['message'] ?? 'Unable to search records.'
+            ])->setStatusCode((int) ($employeeResponse['http_status'] ?? 502));
+        }
+
+        $employees = $this->extractMisRecords($employeeResponse, 'employees');
+        $formatted = [];
+        foreach ($employees as $employee) {
+            $formatted[] = $this->formatMisPerson($employee, 'employee');
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => $formatted
+        ]);
+    }
+
+    /**
      * Get departments from MIS
      */
     public function getDepartments()
@@ -261,16 +295,47 @@ class Users extends BaseController
         $isSubscriber = (int) ($data['user_type_id'] ?? 0) === UserModel::ROLE_SUBSCRIBER;
 
         if ($isSubscriber) {
-            $prepared = $this->prepareSubscriberPayload($data, false);
-            if (!$prepared['success']) {
+            $payload = [
+                'external_user_id' => trim((string) ($data['external_user_id'] ?? '')),
+                'first_name' => trim((string) ($data['first_name'] ?? '')),
+                'last_name' => trim((string) ($data['last_name'] ?? '')),
+                'email' => trim((string) ($data['email'] ?? '')),
+                'user_type_id' => UserModel::ROLE_SUBSCRIBER,
+                'tokens' => 0,
+                'status' => 'active',
+            ];
+
+            if ($payload['external_user_id'] === '') {
+                $payload['external_user_id'] = $this->buildSubscriberExternalId(
+                    $payload['first_name'],
+                    $payload['last_name']
+                );
+            }
+
+            $errors = [];
+            if ($payload['external_user_id'] === '') {
+                $errors['external_user_id'] = 'Subscriber ID is required.';
+            }
+            if ($payload['first_name'] === '') {
+                $errors['first_name'] = 'First name is required.';
+            }
+            if ($payload['last_name'] === '') {
+                $errors['last_name'] = 'Last name is required.';
+            }
+            if ($payload['email'] === '') {
+                $errors['email'] = 'Email is required.';
+            } elseif (!filter_var($payload['email'], FILTER_VALIDATE_EMAIL)) {
+                $errors['email'] = 'Please enter a valid email address.';
+            }
+
+            if (!empty($errors)) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => $prepared['message'],
-                    'errors' => $prepared['errors'] ?? []
+                    'message' => 'Validation failed',
+                    'errors' => $errors
                 ])->setStatusCode(400);
             }
 
-            $payload = $prepared['data'];
             $existingUser = null;
             if (!empty($payload['external_user_id'])) {
                 $existingUser = $this->userModel->getUserByExternalId($payload['external_user_id']);
@@ -380,7 +445,7 @@ class Users extends BaseController
 
             $payload = $prepared['data'];
             $payload['status'] = $this->request->getPost('status') ?: ($user['status'] ?? 'active');
-            $payload['hour_balance'] = $this->request->getPost('hour_balance') ?? ($user['hour_balance'] ?? 0);
+            $payload['tokens'] = $this->request->getPost('tokens') ?? $this->request->getPost('hour_balance') ?? ($user['tokens'] ?? $user['hour_balance'] ?? 0);
             $payload['user_type_id'] = UserModel::ROLE_SUBSCRIBER;
 
             if ($this->userModel->updateUser($userId, $payload)) {
@@ -406,7 +471,7 @@ class Users extends BaseController
             'email' => $this->request->getPost('email'),
             'user_type_id' => $this->request->getPost('user_type_id'),
             'status' => $this->request->getPost('status'),
-            'hour_balance' => $this->request->getPost('hour_balance')
+            'tokens' => $this->request->getPost('tokens') ?? $this->request->getPost('hour_balance')
         ];
 
         $password = $this->request->getPost('password');
@@ -467,7 +532,7 @@ class Users extends BaseController
         if ((int) ($user['user_type_id'] ?? 0) === UserModel::ROLE_SUBSCRIBER) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Subscriber deletion is disabled. Please update the subscriber balance or status instead.'
+                'message' => 'Subscriber deletion is disabled. Please update the subscriber token balance or status instead.'
             ])->setStatusCode(403);
         }
 
@@ -532,7 +597,7 @@ class Users extends BaseController
             'Last Name',
             'Email',
             'User Type',
-            'Hour Balance',
+            'Tokens',
             'Status',
             'Online Status',
             'Created At'
@@ -555,7 +620,7 @@ class Users extends BaseController
                 $user['last_name'] ?? '',
                 $user['email'] ?? '',
                 $user['user_type_name'] ?? $user['type_name'] ?? 'N/A',
-                $user['hour_balance'] ?? 0,
+                $user['tokens'] ?? $user['hour_balance'] ?? 0,
                 ucfirst($user['status'] ?? 'N/A'),
                 (!empty($user['is_online']) && $user['is_online']) ? 'Online' : 'Offline',
                 $createdAt
@@ -587,7 +652,7 @@ class Users extends BaseController
             'last_name',
             'email',
             'user_type_id',
-            'hour_balance',
+            'tokens',
             'status',
             'password',
             'assigned_area_id'
@@ -1366,7 +1431,7 @@ class Users extends BaseController
             'last_name' => $mapped['last_name'],
             'email' => $mapped['email'],
             'user_type_id' => UserModel::ROLE_SUBSCRIBER,
-            'hour_balance' => (int) ($data['hour_balance'] ?? ($existingUser['hour_balance'] ?? 0)),
+            'tokens' => (int) ($data['tokens'] ?? $data['hour_balance'] ?? ($existingUser['tokens'] ?? $existingUser['hour_balance'] ?? 0)),
             'status' => $data['status'] ?? ($existingUser['status'] ?? 'active'),
         ];
 
@@ -1433,7 +1498,7 @@ class Users extends BaseController
             'last_name' => trim((string) ($person['last_name'] ?? '')),
             'email' => trim((string) ($person['email'] ?? '')),
             'user_type_id' => UserModel::ROLE_SUBSCRIBER,
-            'hour_balance' => $existingUser ? (int) ($existingUser['hour_balance'] ?? 0) : 0,
+            'tokens' => $existingUser ? (int) ($existingUser['tokens'] ?? $existingUser['hour_balance'] ?? 0) : 0,
             'status' => $existingUser['status'] ?? 'active',
         ];
 
@@ -1504,6 +1569,26 @@ class Users extends BaseController
     }
 
     /**
+     * Build a suggested subscriber ID from a person's name.
+     */
+    private function buildSubscriberExternalId(string $firstName, string $lastName, string $fallback = ''): string
+    {
+        $firstName = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', $firstName));
+        $lastName = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', $lastName));
+
+        $localPart = $firstName;
+        if ($lastName !== '') {
+            $localPart .= ($localPart !== '' ? '.' : '') . $lastName;
+        }
+
+        if ($localPart === '') {
+            $localPart = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '', $fallback));
+        }
+
+        return $localPart;
+    }
+
+    /**
      * Normalize CSV headers into snake_case keys.
      */
     private function normalizeImportHeaders(array $headers): array
@@ -1545,7 +1630,7 @@ class Users extends BaseController
         $lastName = trim((string) ($record['last_name'] ?? ''));
         $email = trim((string) ($record['email'] ?? ''));
         $status = trim((string) ($record['status'] ?? 'active')) ?: 'active';
-        $hourBalance = (int) ($record['hour_balance'] ?? 0);
+        $tokens = (int) ($record['tokens'] ?? $record['hour_balance'] ?? 0);
         $assignedAreaId = trim((string) ($record['assigned_area_id'] ?? ''));
         $password = trim((string) ($record['password'] ?? ''));
         $userTypeId = $this->resolveImportUserTypeId($record);
@@ -1589,7 +1674,7 @@ class Users extends BaseController
             'last_name' => $lastName,
             'email' => $email,
             'user_type_id' => $userTypeId,
-            'hour_balance' => $hourBalance,
+            'tokens' => $tokens,
             'status' => in_array($status, ['active', 'inactive', 'suspended'], true) ? $status : 'active',
         ];
 

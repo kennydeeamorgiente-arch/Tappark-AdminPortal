@@ -581,20 +581,38 @@ class DashboardModel extends Model
     public function getHourBalanceTrends()
     {
         try {
-            $result = $this->db->query("
-                SELECT 
-                    SUM(CASE WHEN transaction_type = 'hour_addition' THEN hours ELSE 0 END) as total_purchased,
-                    SUM(CASE WHEN transaction_type = 'hour_deduction' THEN hours ELSE 0 END) as total_used
-                FROM transactions
-            ")->getRow();
-            
-            $purchased = (float)($result->total_purchased ?? 0);
-            $used = (float)($result->total_used ?? 0);
-            $remaining = $purchased - $used;
-            
+            if ($this->db->tableExists('transactions')) {
+                $result = $this->db->query("
+                    SELECT 
+                        SUM(CASE WHEN transaction_type = 'hour_addition' THEN hours ELSE 0 END) as total_purchased,
+                        SUM(CASE WHEN transaction_type = 'hour_deduction' THEN hours ELSE 0 END) as total_used
+                    FROM transactions
+                ")->getRow();
+
+                $purchased = (float)($result->total_purchased ?? 0);
+                $used = (float)($result->total_used ?? 0);
+                $remaining = $purchased - $used;
+
+                return [
+                    'labels' => ['Purchased', 'Used', 'Remaining'],
+                    'data' => [$purchased, $used, $remaining]
+                ];
+            }
+
+            $totals = $this->db->table('users')
+                ->select('COALESCE(SUM(CASE WHEN user_type_id = 1 THEN tokens ELSE 0 END), 0) as subscriber_tokens', false)
+                ->select('COALESCE(SUM(CASE WHEN user_type_id IN (2, 3) THEN tokens ELSE 0 END), 0) as staff_tokens', false)
+                ->select('COALESCE(SUM(tokens), 0) as total_tokens', false)
+                ->get()
+                ->getRow();
+
             return [
-                'labels' => ['Purchased', 'Used', 'Remaining'],
-                'data' => [$purchased, $used, $remaining]
+                'labels' => ['Subscribers', 'Staff', 'Total'],
+                'data' => [
+                    (float) ($totals->subscriber_tokens ?? 0),
+                    (float) ($totals->staff_tokens ?? 0),
+                    (float) ($totals->total_tokens ?? 0),
+                ]
             ];
         } catch (\Exception $e) {
             return ['labels' => [], 'data' => []];

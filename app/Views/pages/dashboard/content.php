@@ -203,14 +203,14 @@
 
 <!-- Charts Row 3 (Optional Enhanced Charts) -->
 <div class="row mb-4">
-    <!-- Hour Balance Chart -->
+    <!-- Token Balance Chart -->
     <div class="col-lg-6 mb-3">
         <div class="card h-100 shadow-sm dashboard-chart-card">
             <div class="card-header bg-transparent border-0 pb-0 dashboard-chart-header">
                 <h5 class="mb-1 fw-bold">
-                    <i class="fas fa-clock text-primary me-2"></i>Hour Balance Trends
+                    <i class="fas fa-coins text-primary me-2"></i>Token Balance Trends
                 </h5>
-                <small class="text-muted">Purchased hours, used hours, and hours left</small>
+                <small class="text-muted">Purchased tokens, used tokens, and tokens left</small>
             </div>
             <div class="card-body">
                 <div style="height: 300px; position: relative;">

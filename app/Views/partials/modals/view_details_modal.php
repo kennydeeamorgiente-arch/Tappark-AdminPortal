@@ -67,9 +67,9 @@
                                 <!-- Balance & Activity -->
                                 <div class="col-md-6">
                                     <div class="detail-card h-100 bg-light-maroon border-0 shadow-none">
-                                        <h6 class="text-maroon fw-bold mb-3"><i class="fas fa-clock me-2"></i>Parking Balance</h6>
-                                        <div class="display-6 fw-bold text-dark" id="viewUserHourBalance">-</div>
-                                        <small class="text-muted">Total hours available</small>
+                                        <h6 class="text-maroon fw-bold mb-3"><i class="fas fa-coins me-2"></i>Token Balance</h6>
+                                        <div class="display-6 fw-bold text-dark" id="viewUserTokens">-</div>
+                                        <small class="text-muted">Total tokens available</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

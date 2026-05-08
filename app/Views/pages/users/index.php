@@ -174,7 +174,7 @@
                                     <th class="sortable" data-column="user_id">ID <i class="fas fa-sort text-muted ms-1"></i></th>
                                     <th class="sortable" data-column="name">Name <i class="fas fa-sort text-muted ms-1"></i></th>
                                     <th class="sortable" data-column="email">Email <i class="fas fa-sort text-muted ms-1"></i></th>
-                                    <th class="sortable" data-column="hour_balance">Hour Balance <i class="fas fa-sort text-muted ms-1"></i></th>
+                                    <th class="sortable" data-column="tokens">Tokens <i class="fas fa-sort text-muted ms-1"></i></th>
                                     <th class="sortable" data-column="status">Status <i class="fas fa-sort text-muted ms-1"></i></th>
                                     <th class="sortable" data-column="online">Login Status <i class="fas fa-sort text-muted ms-1"></i></th>
                                     <th>Actions</th>
@@ -409,7 +409,7 @@
                 <div class="mb-3">
                     <label class="form-label">CSV File</label>
                     <input type="file" class="form-control" id="importUsersFile" accept=".csv,text/csv">
-                    <div class="form-text">Columns supported: external_user_id, first_name, last_name, email, user_type_id or role, hour_balance, status, password, assigned_area_id.</div>
+                    <div class="form-text">Columns supported: external_user_id, first_name, last_name, email, user_type_id or role, tokens, status, password, assigned_area_id.</div>
                 </div>
                 <div id="importUsersSummary" class="small text-muted d-none"></div>
             </div>

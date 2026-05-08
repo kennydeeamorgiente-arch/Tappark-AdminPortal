@@ -43,6 +43,7 @@ $routes->get('users/get/(:num)', 'Users::get/$1');
 $routes->get('users/getUserTypes', 'Users::getUserTypes');
 $routes->get('users/lookupStudent', 'Users::lookupStudent');
 $routes->get('users/searchStudents', 'Users::searchStudents');
+$routes->get('users/searchEmployees', 'Users::searchEmployees');
 $routes->get('users/importTemplate', 'Users::importTemplate');
 $routes->post('users/import', 'Users::import');
 $routes->get('users/getDepartments', 'Users::getDepartments');

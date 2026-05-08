@@ -716,7 +716,7 @@ function initDashboardCharts() {
 
             var hourValues = (hourBalanceData && hourBalanceData.data) ? hourBalanceData.data : [];
             if (!hasAnyPositiveValue(hourValues)) {
-                showNoDataMessage('hourBalanceChart', 'fas fa-clock', 'No Data Available', 'No hour balance data found');
+                showNoDataMessage('hourBalanceChart', 'fas fa-coins', 'No Data Available', 'No token balance data found');
             } else {
             
             window.dashboardCharts.hourBalanceChart = new Chart(hourBalanceCtx, {

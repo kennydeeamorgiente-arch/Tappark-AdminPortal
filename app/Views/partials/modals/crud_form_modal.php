@@ -36,43 +36,41 @@
                              ============================ -->
                         <div class="entity-fields fields-users" style="display: none;">
                             <div class="mb-3">
-                                <label class="form-label">Subscriber ID <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="external_user_id" id="userStudentId" placeholder="Enter subscriber ID">
-                                    <button class="btn btn-outline-secondary" type="button" id="lookupStudentBtn">
-                                        <i class="fas fa-search me-1"></i>Load Record
-                                    </button>
+                                <label class="form-label">Input Subscriber <span class="text-danger">*</span></label>
+                                <div class="subscriber-id-autocomplete position-relative">
+                                    <input type="text" class="form-control" name="external_user_id" id="userStudentId" placeholder="Type to search subscribers">
+                                    <div class="list-group subscriber-suggestion-list d-none" id="userStudentIdSuggestions"></div>
                                 </div>
-                                <small class="text-muted">Pull the subscriber record before saving.</small>
+                                <small class="text-muted d-block">The ID is suggested from the subscriber name, and can still be adjusted if needed.</small>
                                 <div class="invalid-feedback" id="error-external_user_id"></div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">First Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="first_name" id="userFirstName" readonly>
+                                    <input type="text" class="form-control" name="first_name" id="userFirstName">
                                     <div class="invalid-feedback" id="error-first_name"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="last_name" id="userLastName" readonly>
+                                    <input type="text" class="form-control" name="last_name" id="userLastName">
                                     <div class="invalid-feedback" id="error-last_name"></div>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email" id="userEmail" readonly>
+                                <input type="email" class="form-control" name="email" id="userEmail">
                                 <div class="invalid-feedback" id="error-email"></div>
                             </div>
                             <div class="alert alert-light border small mb-3">
                                 <i class="fas fa-info-circle me-2 text-primary"></i>
-                                Subscriber identity is loaded automatically. The admin only manages the parking hour balance and account status here.
+                                Enter the subscriber details manually. The token balance and account status are managed during edits.
                             </div>
                             <input type="hidden" name="user_type_id" id="userTypeId" value="1">
 
-                            <div class="mb-3">
-                                <label class="form-label">Hour Balance</label>
-                                <input type="number" class="form-control" name="hour_balance" id="userHourBalance" value="0" min="0">
-                                <div class="invalid-feedback" id="error-hour_balance"></div>
+                            <div class="mb-3 edit-only">
+                                <label class="form-label">Tokens</label>
+                                <input type="number" class="form-control" name="tokens" id="userTokens" value="0" min="0">
+                                <div class="invalid-feedback" id="error-tokens"></div>
                             </div>
                             <!-- Status Field moved to Checkbox for Edit only -->
                             <div class="mb-3 edit-only">
@@ -88,33 +86,30 @@
                              ATTENDANT FIELDS
                              ============================ -->
                         <div class="entity-fields fields-attendants" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Input Administrator <span class="text-danger">*</span></label>
+                                <div class="employee-name-autocomplete position-relative">
+                                    <input type="text" class="form-control" name="employee_search" id="attendantEmployeeSearch" placeholder="Type to search employees" autocomplete="off">
+                                    <div class="list-group employee-suggestion-list d-none" id="attendantEmployeeSuggestions"></div>
+                                </div>
+                                <small class="text-muted d-block">The employee is suggested from the name, ID, or email, and can still be adjusted if needed.</small>
+                            </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">First Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="first_name" id="attendantFirstName">
+                                    <input type="text" class="form-control" name="first_name" id="attendantFirstName" autocomplete="off">
                                     <div class="invalid-feedback" id="error-first_name"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="last_name" id="attendantLastName">
+                                    <input type="text" class="form-control" name="last_name" id="attendantLastName" autocomplete="off">
                                     <div class="invalid-feedback" id="error-last_name"></div>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email" id="attendantEmail">
+                                <input type="email" class="form-control" name="email" id="attendantEmail" autocomplete="off">
                                 <div class="invalid-feedback" id="error-email"></div>
-                            </div>
-                            <div class="mb-3 password-field">
-                                <label class="form-label">Password <span class="text-danger add-only">*</span></label>
-                                <input type="password" class="form-control" name="password" id="attendantPassword" minlength="8">
-                                <small class="text-muted edit-only">Leave blank to keep current password</small>
-                                <small class="text-muted add-only">Minimum 8 characters</small>
-                                <div class="invalid-feedback" id="error-password"></div>
-                                <div class="password-strength-meter" aria-hidden="true">
-                                    <div class="password-strength-bar" id="attendantPasswordStrengthBar"></div>
-                                </div>
-                                <small class="password-strength-text" id="attendantPasswordStrengthText">Enter a password to check strength.</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Role <span class="text-danger">*</span></label>
@@ -402,6 +397,54 @@
 #crudFormModal .form-select.is-invalid:focus {
     border-color: #dc3545 !important;
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25) !important;
+}
+
+#crudFormModal .subscriber-suggestion-list,
+#crudFormModal .employee-suggestion-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1080;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    background: #fff;
+}
+
+#crudFormModal .subscriber-suggestion-item,
+#crudFormModal .employee-suggestion-item {
+    border: 0;
+    border-bottom: 1px solid #f1f3f5;
+    padding: 0.7rem 0.85rem;
+    cursor: pointer;
+}
+
+#crudFormModal .subscriber-suggestion-item:last-child,
+#crudFormModal .employee-suggestion-item:last-child {
+    border-bottom: 0;
+}
+
+#crudFormModal .subscriber-suggestion-item:hover,
+#crudFormModal .subscriber-suggestion-item.active,
+#crudFormModal .employee-suggestion-item:hover,
+#crudFormModal .employee-suggestion-item.active {
+    background: #f8f0f0;
+    color: #800000;
+}
+
+#crudFormModal .subscriber-suggestion-name,
+#crudFormModal .employee-suggestion-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+#crudFormModal .subscriber-suggestion-meta,
+#crudFormModal .employee-suggestion-meta {
+    font-size: 0.75rem;
+    color: #6c757d;
 }
 
 /* Confirmation Section Styles */

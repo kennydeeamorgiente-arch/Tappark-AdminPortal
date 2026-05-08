@@ -151,7 +151,7 @@ class Attendants extends BaseController
             'user_type_id' => $this->request->getPost('user_type_id'),
             'assigned_area_id' => $this->request->getPost('assigned_area_id') ?: null,
             'status' => $this->request->getPost('status'),
-            'hour_balance' => 0
+            'tokens' => 0
         ];
 
         // Validate

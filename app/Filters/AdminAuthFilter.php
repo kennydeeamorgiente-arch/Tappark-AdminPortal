@@ -15,8 +15,9 @@ class AdminAuthFilter implements FilterInterface
 
         $userId = $session->get('user_id');
         $userTypeId = $session->get('user_type_id');
+        $accessLevel = $session->get('access_level');
 
-        if (!$userId || (int) $userTypeId !== UserModel::ROLE_ADMIN) {
+        if (!$userId || ((int) $accessLevel !== UserModel::ROLE_ADMIN && (int) $userTypeId !== UserModel::ROLE_ADMIN)) {
             if ($request->isAJAX()) {
                 return service('response')
                     ->setStatusCode(401)

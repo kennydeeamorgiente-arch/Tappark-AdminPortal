@@ -606,8 +606,8 @@ if (typeof window.initPageScripts === 'function') {
                             </td>
                             <td>${escapeHtml(user.email)}</td>
                             <td>
-                                ${parseFloat(user.hour_balance || 0) > 0
-                                ? `<span class="badge bg-info">${user.hour_balance} hrs</span>`
+                                ${parseFloat(user.tokens ?? user.hour_balance ?? 0) > 0
+                                ? `<span class="badge bg-info">${user.tokens ?? user.hour_balance ?? 0} tokens</span>`
                                 : `<span class="badge bg-secondary opacity-75">Unused</span>`}
                             </td>
                             <td>${statusBadge}</td>
@@ -1034,6 +1034,8 @@ if (typeof window.initPageScripts === 'function') {
                 // Hide all entity fields, show only users
                 $('.entity-fields').hide();
                 $('.fields-users').show();
+                $('#userFirstName, #userLastName, #userEmail').prop('readonly', true);
+                $('#userTokens, #userSuspendAccount').closest('.edit-only').hide();
 
                 // Show modal
                 const bsModal = bootstrap.Modal.getOrCreateInstance($('#crudFormModal')[0], {
@@ -1140,7 +1142,7 @@ if (typeof window.initPageScripts === 'function') {
                 $('#viewUserEmail').text(user.email || '-');
                 $('#viewUserExternalId').text(user.external_user_id || '-');
                 $('#viewUserType').text(user.user_type_name || 'Subscriber');
-                $('#viewUserHourBalance').text(`${user.hour_balance || 0} hrs`);
+                $('#viewUserTokens').text(`${user.tokens ?? user.hour_balance ?? 0} tokens`);
 
                 // Online status
                 const onlineStatus = (user.is_online == 1 || user.is_online === true)
@@ -1205,7 +1207,7 @@ if (typeof window.initPageScripts === 'function') {
             $(document).off('click', '.delete-user-btn').on('click', '.delete-user-btn', function () {
                 showSuccessModal(
                     'Deletion Disabled',
-                    'Subscriber deletion is currently disabled. Please update the balance or status instead.'
+                    'Subscriber deletion is currently disabled. Please update the token balance or status instead.'
                 );
             });
 
@@ -1284,8 +1286,8 @@ if (typeof window.initPageScripts === 'function') {
                     </td>
                     <td>${escapeHtml(userData.email)}</td>
                     <td>
-                        ${parseFloat(userData.hour_balance || 0) > 0
-                        ? `<span class="badge bg-info">${userData.hour_balance} hrs</span>`
+                        ${parseFloat(userData.tokens ?? userData.hour_balance ?? 0) > 0
+                        ? `<span class="badge bg-info">${userData.tokens ?? userData.hour_balance ?? 0} tokens</span>`
                         : `<span class="badge bg-secondary opacity-75">Unused</span>`}
                     </td>
                     <td>${statusBadge}</td>
@@ -1403,8 +1405,8 @@ if (typeof window.initPageScripts === 'function') {
                 `);
                     row.find('td:eq(2)').text(escapeHtml(userData.email));
                     row.find('td:eq(3)').html(
-                        parseFloat(userData.hour_balance || 0) > 0
-                            ? `<span class="badge bg-info">${userData.hour_balance} hrs</span>`
+                        parseFloat(userData.tokens ?? userData.hour_balance ?? 0) > 0
+                            ? `<span class="badge bg-info">${userData.tokens ?? userData.hour_balance ?? 0} tokens</span>`
                             : `<span class="badge bg-secondary opacity-75">Unused</span>`
                     );
                     row.find('td:eq(4)').html(statusBadge);
@@ -1675,13 +1677,22 @@ if (typeof window.initPageScripts === 'function') {
 
                 // Collect data based on entity type
                 if (entity === 'users') {
+                    const firstName = $('#userFirstName').val().trim();
+                    const lastName = $('#userLastName').val().trim();
+                    let externalUserId = $('#userStudentId').val().trim();
+
+                    if (!externalUserId && (firstName || lastName)) {
+                        externalUserId = suggestSubscriberExternalId(firstName, lastName);
+                        $('#userStudentId').val(externalUserId);
+                    }
+
                     formData = {
-                        external_user_id: $('#userStudentId').val().trim(),
-                        first_name: $('#userFirstName').val().trim(),
-                        last_name: $('#userLastName').val().trim(),
+                        external_user_id: externalUserId,
+                        first_name: firstName,
+                        last_name: lastName,
                         email: $('#userEmail').val().trim(),
                         user_type_id: $('#userTypeId').val(),
-                        hour_balance: $('#userHourBalance').val() || 0
+                        tokens: $('#userTokens').val() || 0
                     };
 
                     // Status logic for users
@@ -1734,23 +1745,12 @@ if (typeof window.initPageScripts === 'function') {
                 }
 
                 if (entity === 'users' && !formData.external_user_id) {
-                        errors.external_user_id = 'Subscriber ID is required';
+                    errors.external_user_id = 'Subscriber ID is required';
                     hasErrors = true;
                 }
 
                 if (entity === 'users') {
-                    if (!formData.first_name) {
-                        errors.first_name = 'Please load the subscriber record first';
-                        hasErrors = true;
-                    }
-                    if (!formData.last_name) {
-                        errors.last_name = 'Please load the subscriber record first';
-                        hasErrors = true;
-                    }
-                    if (!formData.email) {
-                        errors.email = 'Please load the subscriber record first';
-                        hasErrors = true;
-                    }
+                    // Subscribers are now entered manually, so just require the typed values.
                 } else if (!formData.user_type_id) {
                     errors.user_type_id = 'Role/Type is required';
                     hasErrors = true;
@@ -1821,11 +1821,14 @@ if (typeof window.initPageScripts === 'function') {
                     <div class="row">
                         <div class="col-md-6"><strong>Subscriber ID:</strong></div>
                         <div class="col-md-6">${escapeHtml(formData.external_user_id || '')}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><strong>Hour Balance:</strong></div>
-                        <div class="col-md-6">${formData.hour_balance || 0} hrs</div>
                     </div>`;
+                    if (action === 'edit') {
+                        summaryHtml += `
+                    <div class="row">
+                        <div class="col-md-6"><strong>Tokens:</strong></div>
+                        <div class="col-md-6">${formData.tokens || 0} tokens</div>
+                    </div>`;
+                    }
                 } else if (entity === 'attendants' && formData.assigned_area_id) {
                     summaryHtml += `
                     <div class="row">
@@ -2093,114 +2096,681 @@ if (typeof window.initPageScripts === 'function') {
                 }
             }
 
-            function setSubscriberManualEntryMode() {
-                $('#userStudentId').prop('readonly', false);
-                $('#userFirstName').prop('readonly', false);
-                $('#userLastName').prop('readonly', false);
-                $('#userEmail').prop('readonly', false);
+            let subscriberSuggestTimer = null;
+            let subscriberSuggestXhr = null;
+            let subscriberSuggestRequestToken = '';
+            let employeeSuggestTimer = null;
+            let employeeSuggestXhr = null;
+            let employeeSuggestRequestToken = '';
+
+            function slugifySubscriberPart(value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '.')
+                    .replace(/^\.+|\.+$/g, '');
             }
 
-            function lockSubscriberIdentityFields() {
-                $('#userStudentId').prop('readonly', true);
-                $('#userFirstName').prop('readonly', true);
-                $('#userLastName').prop('readonly', true);
-                $('#userEmail').prop('readonly', true);
+            function suggestSubscriberExternalId(firstName, lastName) {
+                const first = slugifySubscriberPart(firstName);
+                const last = slugifySubscriberPart(lastName);
+
+                if (first && last) {
+                    return `${first}.${last}`;
+                }
+
+                return first || last || '';
             }
 
-            function populateSubscriberFieldsFromMis(student) {
-                const hasIdentity = !!(student && (student.student_id || student.external_user_id || student.first_name || student.last_name || student.email));
+            function normalizeSubscriberSearch(value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
 
-                $('#userStudentId').closest('.mb-3').find('.mis-department-note').remove();
-                $('#userStudentId, #userFirstName, #userLastName, #userEmail').removeClass('is-valid');
-
-                if (!hasIdentity) {
-                    setSubscriberManualEntryMode();
-                    $('#userStudentId').val('');
-                    $('#userFirstName').val('');
-                    $('#userLastName').val('');
-                    $('#userEmail').val('');
+            function matchesSubscriberQuery(item, query) {
+                const search = normalizeSubscriberSearch(query);
+                if (!search) {
                     return false;
                 }
 
-                $('#userStudentId').val(student.student_id || student.external_user_id || '');
-                $('#userFirstName').val(student.first_name || '');
-                $('#userLastName').val(student.last_name || '');
-                $('#userEmail').val(student.email || '');
-                $('#userTypeId').val(1);
-                lockSubscriberIdentityFields();
+                const tokens = search.split(' ').filter(Boolean);
+                const fullName = normalizeSubscriberSearch(item.full_name || `${item.first_name || ''} ${item.last_name || ''}`);
+                const nameTokens = fullName.split(' ').filter(Boolean);
+                const externalTokens = normalizeSubscriberSearch(item.external_user_id || item.student_id || '').split(' ').filter(Boolean);
+                const emailTokens = normalizeSubscriberSearch(item.email || '').split(' ').filter(Boolean);
+                const searchableTokens = nameTokens.concat(externalTokens, emailTokens);
 
-                if (student.department_name) {
-                    $('#userStudentId').closest('.mb-3').append(
-                        `<small class="text-muted d-block mt-1 mis-department-note">Department: ${escapeHtml(student.department_name)}</small>`
-                    );
-                }
-
-                return true;
-            }
-
-            function clearSubscriberLookupState() {
-                $('#userStudentId').val('').prop('readonly', false);
-                $('#userFirstName').val('').prop('readonly', false);
-                $('#userLastName').val('').prop('readonly', false);
-                $('#userEmail').val('').prop('readonly', false);
-                $('#userStudentId').closest('.mb-3').find('.mis-department-note').remove();
-                $('#userStudentId, #userFirstName, #userLastName, #userEmail').removeClass('is-valid');
-            }
-
-            function lookupSubscriberFromMis(studentId) {
-                const cleanStudentId = (studentId || '').trim();
-                if (!cleanStudentId) {
-                    showSuccessModal('Missing Subscriber ID', 'Please enter a subscriber ID first.');
-                    return;
-                }
-
-                const lookupBtn = $('#lookupStudentBtn');
-                const originalText = lookupBtn.html();
-                lookupBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Loading...');
-
-                $.ajax({
-                    url: `${baseUrl}users/lookupStudent`,
-                    method: 'GET',
-                    data: { student_id: cleanStudentId },
-                    success: function (response) {
-                        console.log('MIS lookup response:', response);
-                        if (response.success && response.data) {
-                            const populated = populateSubscriberFieldsFromMis(response.data);
-                            if (populated) {
-                                $('#userStudentId').addClass('is-valid');
-                                if (typeof loadUsers === 'function') {
-                                    loadUsers();
-                                }
-                            } else {
-                                showSuccessModal('Lookup Complete', 'No matching record was returned. Use Add Guest to create a manual account.');
-                            }
-                        } else if (response.allow_manual) {
-                            showSuccessModal('No Record Found', response.message || 'No matching record was returned. Use Add Guest to create a manual account.');
-                        } else {
-                            showSuccessModal('Lookup Failed', response.message || 'Unable to load the subscriber record.');
-                        }
-                    },
-                    error: function (xhr) {
-                        const message = xhr.responseJSON && xhr.responseJSON.message
-                            ? xhr.responseJSON.message
-                            : 'Unable to load the subscriber record.';
-                        showSuccessModal('Lookup Failed', message);
-                    },
-                    complete: function () {
-                        lookupBtn.prop('disabled', false).html(originalText);
-                    }
+                return tokens.every(function (token) {
+                    return searchableTokens.some(function (candidate) {
+                        return candidate.startsWith(token);
+                    });
                 });
             }
 
-            $('#lookupStudentBtn').off('click.users').on('click.users', function (e) {
-                e.preventDefault();
-                lookupSubscriberFromMis($('#userStudentId').val());
+            function getSubscriberSuggestionPool() {
+                const pool = [];
+                const seen = new Set();
+
+                (allUsersData || []).forEach(function (user) {
+                    if (!user || !user.user_id) {
+                        return;
+                    }
+
+                    const key = String(user.user_id);
+                    if (seen.has(key)) {
+                        return;
+                    }
+
+                    seen.add(key);
+                    pool.push(user);
+                });
+
+                if (pool.length === 0) {
+                    $('#userTableBody tr[data-user-id]').each(function () {
+                        const $row = $(this);
+                        const userId = String($row.data('user-id') || '').trim();
+                        if (!userId || seen.has(userId)) {
+                            return;
+                        }
+
+                        const nameParts = $row.find('td').eq(1).find('strong').text().trim().split(/\s+/);
+                        const name = $row.find('td').eq(1).find('strong').text().trim();
+                        const email = $row.find('td').eq(2).text().trim();
+                        const externalId = $row.find('td').eq(1).find('small').text().trim();
+
+                        seen.add(userId);
+                        pool.push({
+                            user_id: userId,
+                            first_name: nameParts.shift() || name || '',
+                            last_name: nameParts.join(' ') || '',
+                            email: email,
+                            external_user_id: externalId
+                        });
+                    });
+                }
+
+                return pool;
+            }
+
+            function hideSubscriberSuggestions() {
+                $('#userStudentIdSuggestions').addClass('d-none').empty();
+            }
+
+            function populateSubscriberSuggestion(user) {
+                if (!user) {
+                    return;
+                }
+
+                const firstName = String(user.first_name || '').trim();
+                const lastName = String(user.last_name || '').trim();
+                const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+                const externalId = String(user.external_user_id || '').trim() || suggestSubscriberExternalId(firstName, lastName);
+
+                $('#userFirstName').val(firstName);
+                $('#userLastName').val(lastName);
+                $('#userEmail').val(String(user.email || '').trim());
+                $('#userStudentId').val(externalId);
+
+                hideSubscriberSuggestions();
+            }
+
+            function renderSubscriberSuggestions(query) {
+                const $list = $('#userStudentIdSuggestions');
+                if (!$list.length) {
+                    return;
+                }
+
+                const search = String(query || '').trim().toLowerCase();
+                if (!search) {
+                    hideSubscriberSuggestions();
+                    return;
+                }
+
+                const matches = getSubscriberSuggestionPool()
+                    .map(function (user) {
+                        const firstName = String(user.first_name || '').toLowerCase();
+                        const lastName = String(user.last_name || '').toLowerCase();
+                        const fullName = `${firstName} ${lastName}`.trim();
+                        const reverseName = `${lastName} ${firstName}`.trim();
+                        const externalId = String(user.external_user_id || '').toLowerCase();
+                        const email = String(user.email || '').toLowerCase();
+
+                        let score = -1;
+                        if (fullName.startsWith(search) || reverseName.startsWith(search)) {
+                            score = 0;
+                        } else if (fullName.includes(search) || reverseName.includes(search)) {
+                            score = 1;
+                        } else if (externalId.startsWith(search) || email.startsWith(search)) {
+                            score = 2;
+                        } else if (externalId.includes(search) || email.includes(search)) {
+                            score = 3;
+                        }
+
+                        return {
+                            user,
+                            score,
+                            name: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
+                            externalId: user.external_user_id || suggestSubscriberExternalId(user.first_name || '', user.last_name || ''),
+                            email: user.email || ''
+                        };
+                    })
+                    .filter(function (item) {
+                        return item.score >= 0;
+                    })
+                    .sort(function (a, b) {
+                        if (a.score !== b.score) {
+                            return a.score - b.score;
+                        }
+                        return a.name.localeCompare(b.name);
+                    })
+                    .slice(0, 6);
+
+                if (!matches.length) {
+                    $list.html(`
+                        <button type="button" class="list-group-item list-group-item-action subscriber-suggestion-item disabled">
+                            <div class="subscriber-suggestion-name">No matching subscribers found</div>
+                            <div class="subscriber-suggestion-meta">Try another name or ID.</div>
+                        </button>
+                    `).removeClass('d-none');
+                    return;
+                }
+
+                let html = '';
+                matches.forEach(function (item) {
+                    html += `
+                        <button type="button"
+                                class="list-group-item list-group-item-action subscriber-suggestion-item"
+                                data-user-id="${item.user.user_id}">
+                            <div class="subscriber-suggestion-name">${escapeHtml(item.name || item.externalId)}</div>
+                            <div class="subscriber-suggestion-meta">
+                                ${escapeHtml(item.externalId)}
+                                ${item.email ? `&nbsp;•&nbsp;${escapeHtml(item.email)}` : ''}
+                            </div>
+                        </button>
+                    `;
+                });
+
+                $list.html(html).removeClass('d-none');
+            }
+
+            function renderSubscriberSuggestionsFromApi(query) {
+                const $list = $('#userStudentIdSuggestions');
+                if (!$list.length) {
+                    return;
+                }
+
+                const search = String(query || '').trim();
+                if (!search) {
+                    if (subscriberSuggestXhr && subscriberSuggestXhr.readyState !== 4) {
+                        subscriberSuggestXhr.abort();
+                    }
+                    hideSubscriberSuggestions();
+                    return;
+                }
+
+                if (subscriberSuggestTimer) {
+                    clearTimeout(subscriberSuggestTimer);
+                }
+
+                subscriberSuggestTimer = setTimeout(function () {
+                    const requestToken = Date.now() + ':' + Math.random().toString(36).slice(2);
+                    subscriberSuggestRequestToken = requestToken;
+                    if (subscriberSuggestXhr && subscriberSuggestXhr.readyState !== 4) {
+                        subscriberSuggestXhr.abort();
+                    }
+
+                    $list.html(`
+                        <button type="button" class="list-group-item list-group-item-action subscriber-suggestion-item disabled">
+                            <div class="subscriber-suggestion-name">Searching...</div>
+                            <div class="subscriber-suggestion-meta">Looking up matching subscribers from the API.</div>
+                        </button>
+                    `).removeClass('d-none');
+
+                    const runApiSearch = function (term) {
+                        return Promise.resolve($.ajax({
+                            url: `${baseUrl}users/searchStudents`,
+                            method: 'GET',
+                            data: { search: term }
+                        })).then(function (response) {
+                            return (response && response.success && Array.isArray(response.data)) ? response.data : [];
+                        }).catch(function () {
+                            return [];
+                        });
+                    };
+
+                    const renderMatches = function (items) {
+                        const matches = (items || [])
+                            .filter(function (item) {
+                                return matchesSubscriberQuery(item, search);
+                            })
+                            .slice(0, 6);
+
+                        if (!matches.length) {
+                            $list.html(`
+                                <button type="button" class="list-group-item list-group-item-action subscriber-suggestion-item disabled">
+                                    <div class="subscriber-suggestion-name">No matching subscribers found</div>
+                                    <div class="subscriber-suggestion-meta">Try another name or ID.</div>
+                                </button>
+                            `).removeClass('d-none');
+                            return;
+                        }
+
+                        const html = matches.map(function (item) {
+                            const firstName = String(item.first_name || '').trim();
+                            const lastName = String(item.last_name || '').trim();
+                            const fullName = String(item.full_name || [firstName, lastName].filter(Boolean).join(' ')).trim();
+                            const externalId = String(item.external_user_id || item.student_id || suggestSubscriberExternalId(firstName, lastName)).trim();
+                            const email = String(item.email || '').trim();
+
+                            return `
+                                <button type="button"
+                                        class="list-group-item list-group-item-action subscriber-suggestion-item"
+                                        data-user-id="${escapeHtml(String(item.user_id || ''))}"
+                                        data-first-name="${escapeHtml(firstName)}"
+                                        data-last-name="${escapeHtml(lastName)}"
+                                        data-email="${escapeHtml(email)}"
+                                        data-external-id="${escapeHtml(externalId)}">
+                                    <div class="subscriber-suggestion-name">${escapeHtml(fullName || externalId)}</div>
+                                    <div class="subscriber-suggestion-meta">
+                                        ${escapeHtml(externalId)}
+                                        ${email ? `&nbsp;&bull;&nbsp;${escapeHtml(email)}` : ''}
+                                    </div>
+                                </button>
+                            `;
+                        }).join('');
+
+                        $list.html(html).removeClass('d-none');
+                    };
+
+                    const firstSearch = runApiSearch(search);
+
+                    firstSearch.then(function (initialItems) {
+                        if (subscriberSuggestRequestToken !== requestToken) {
+                            return;
+                        }
+
+                        const initialMatches = (initialItems || []).filter(function (item) {
+                            return matchesSubscriberQuery(item, search);
+                        });
+
+                        if (initialMatches.length) {
+                            renderMatches(initialMatches);
+                            return;
+                        }
+
+                        const variants = Array.from(new Set(
+                            normalizeSubscriberSearch(search)
+                                .split(' ')
+                                .filter(function (token) {
+                                    return token.length >= 2;
+                                })
+                        ));
+
+                        if (variants.length <= 1) {
+                            renderMatches([]);
+                            return;
+                        }
+
+                        Promise.all(variants.map(function (term) {
+                            return runApiSearch(term);
+                        })).then(function (resultSets) {
+                            if (subscriberSuggestRequestToken !== requestToken) {
+                                return;
+                            }
+
+                            const merged = [];
+                            const seen = new Set();
+
+                            resultSets.forEach(function (items) {
+                                (items || []).forEach(function (item) {
+                                    const key = String(item.user_id || item.external_user_id || item.student_id || '');
+                                    if (!key || seen.has(key)) {
+                                        return;
+                                    }
+
+                                    if (!matchesSubscriberQuery(item, search)) {
+                                        return;
+                                    }
+
+                                    seen.add(key);
+                                    merged.push(item);
+                                });
+                            });
+
+                            renderMatches(merged);
+                        });
+                    });
+
+                    subscriberSuggestXhr = $.ajax({
+                        url: `${baseUrl}users/searchStudents`,
+                        method: 'GET',
+                        data: { search: search },
+                        success: function (response) {
+                            if (subscriberSuggestRequestToken !== requestToken) {
+                                return;
+                            }
+                            const items = (response && response.success && Array.isArray(response.data)) ? response.data : [];
+                            renderMatches(items);
+                        },
+                        error: function (xhr, status) {
+                            if (status === 'abort') {
+                                return;
+                            }
+
+                            if (subscriberSuggestRequestToken !== requestToken) {
+                                return;
+                            }
+
+                            $list.html(`
+                                <button type="button" class="list-group-item list-group-item-action subscriber-suggestion-item disabled">
+                                    <div class="subscriber-suggestion-name">Search unavailable</div>
+                                    <div class="subscriber-suggestion-meta">Please try again in a moment.</div>
+                                </button>
+                            `).removeClass('d-none');
+                        }
+                    });
+                }, 180);
+            }
+
+            function clearSubscriberLookupState() {
+                $('#userStudentId').val('').prop('readonly', false).data('autoSuggest', true);
+                $('#userFirstName').val('').prop('readonly', false);
+                $('#userLastName').val('').prop('readonly', false);
+                $('#userEmail').val('').prop('readonly', false);
+                $('#userStudentId, #userFirstName, #userLastName, #userEmail').removeClass('is-valid');
+                hideSubscriberSuggestions();
+            }
+
+            function isAdminEmployeeAutocompleteActive() {
+                const entity = String($('#crudEntityType').val() || '');
+                const action = String($('#crudAction').val() || '');
+                const hiddenTypeId = String($('#hiddenUserTypeId').val() || '');
+                const selectedTypeId = String($('#attendantUserTypeId').val() || '');
+
+                return entity === 'attendants' && action === 'add' && (hiddenTypeId === '3' || selectedTypeId === '3');
+            }
+
+            function hideEmployeeSuggestions() {
+                $('#attendantEmployeeSuggestions').addClass('d-none').empty();
+            }
+
+            function populateEmployeeSuggestion(user) {
+                if (!user) {
+                    return;
+                }
+
+                const firstName = String(user.first_name || '').trim();
+                const lastName = String(user.last_name || '').trim();
+                const email = String(user.email || '').trim();
+
+                $('#attendantEmployeeSearch').val([firstName, lastName].filter(Boolean).join(' ')).prop('readonly', true);
+                $('#attendantFirstName').val(firstName).prop('readonly', true);
+                $('#attendantLastName').val(lastName).prop('readonly', true);
+                $('#attendantEmail').val(email).prop('readonly', true);
+
+                hideEmployeeSuggestions();
+            }
+
+            function renderEmployeeSuggestionsFromApi(query) {
+                const $list = $('#attendantEmployeeSuggestions');
+                if (!$list.length) {
+                    return;
+                }
+
+                if (!isAdminEmployeeAutocompleteActive()) {
+                    hideEmployeeSuggestions();
+                    return;
+                }
+
+                const search = String(query || '').trim();
+                if (!search) {
+                    if (employeeSuggestXhr && employeeSuggestXhr.readyState !== 4) {
+                        employeeSuggestXhr.abort();
+                    }
+                    hideEmployeeSuggestions();
+                    return;
+                }
+
+                if (employeeSuggestTimer) {
+                    clearTimeout(employeeSuggestTimer);
+                }
+
+                employeeSuggestTimer = setTimeout(function () {
+                    const requestToken = Date.now() + ':' + Math.random().toString(36).slice(2);
+                    employeeSuggestRequestToken = requestToken;
+
+                    if (employeeSuggestXhr && employeeSuggestXhr.readyState !== 4) {
+                        employeeSuggestXhr.abort();
+                    }
+
+                    $list.html(`
+                        <button type="button" class="list-group-item list-group-item-action employee-suggestion-item disabled">
+                            <div class="employee-suggestion-name">Searching...</div>
+                            <div class="employee-suggestion-meta">Looking up matching employees from the API.</div>
+                        </button>
+                    `).removeClass('d-none');
+
+                    const runApiSearch = function (term) {
+                        return Promise.resolve($.ajax({
+                            url: `${baseUrl}users/searchEmployees`,
+                            method: 'GET',
+                            data: { search: term }
+                        })).then(function (response) {
+                            return (response && response.success && Array.isArray(response.data)) ? response.data : [];
+                        }).catch(function () {
+                            return [];
+                        });
+                    };
+
+                    const renderMatches = function (items) {
+                        const matches = (items || [])
+                            .filter(function (item) {
+                                return matchesSubscriberQuery(item, search);
+                            })
+                            .slice(0, 6);
+
+                        if (!matches.length) {
+                            $list.html(`
+                                <button type="button" class="list-group-item list-group-item-action employee-suggestion-item disabled">
+                                    <div class="employee-suggestion-name">No matching employees found</div>
+                                    <div class="employee-suggestion-meta">Try another name or ID.</div>
+                                </button>
+                            `).removeClass('d-none');
+                            return;
+                        }
+
+                        const html = matches.map(function (item) {
+                            const firstName = String(item.first_name || '').trim();
+                            const lastName = String(item.last_name || '').trim();
+                            const fullName = String(item.full_name || [firstName, lastName].filter(Boolean).join(' ')).trim();
+                            const externalId = String(item.external_user_id || item.student_id || '').trim();
+                            const email = String(item.email || '').trim();
+
+                            return `
+                                <button type="button"
+                                        class="list-group-item list-group-item-action employee-suggestion-item"
+                                        data-first-name="${escapeHtml(firstName)}"
+                                        data-last-name="${escapeHtml(lastName)}"
+                                        data-email="${escapeHtml(email)}">
+                                    <div class="employee-suggestion-name">${escapeHtml(fullName || externalId)}</div>
+                                    <div class="employee-suggestion-meta">
+                                        ${externalId ? escapeHtml(externalId) : ''}
+                                        ${email ? `&nbsp;&bull;&nbsp;${escapeHtml(email)}` : ''}
+                                    </div>
+                                </button>
+                            `;
+                        }).join('');
+
+                        $list.html(html).removeClass('d-none');
+                    };
+
+                    const firstSearch = runApiSearch(search);
+
+                    firstSearch.then(function (initialItems) {
+                        if (employeeSuggestRequestToken !== requestToken) {
+                            return;
+                        }
+
+                        const initialMatches = (initialItems || []).filter(function (item) {
+                            return matchesSubscriberQuery(item, search);
+                        });
+
+                        if (initialMatches.length) {
+                            renderMatches(initialMatches);
+                            return;
+                        }
+
+                        const variants = Array.from(new Set(
+                            normalizeSubscriberSearch(search)
+                                .split(' ')
+                                .filter(function (token) {
+                                    return token.length >= 2;
+                                })
+                        ));
+
+                        if (variants.length <= 1) {
+                            renderMatches([]);
+                            return;
+                        }
+
+                        Promise.all(variants.map(function (term) {
+                            return runApiSearch(term);
+                        })).then(function (resultSets) {
+                            if (employeeSuggestRequestToken !== requestToken) {
+                                return;
+                            }
+
+                            const merged = [];
+                            const seen = new Set();
+
+                            resultSets.forEach(function (items) {
+                                (items || []).forEach(function (item) {
+                                    const key = String(item.user_id || item.external_user_id || item.employee_id || item.student_id || '');
+                                    if (!key || seen.has(key)) {
+                                        return;
+                                    }
+
+                                    if (!matchesSubscriberQuery(item, search)) {
+                                        return;
+                                    }
+
+                                    seen.add(key);
+                                    merged.push(item);
+                                });
+                            });
+
+                            renderMatches(merged);
+                        });
+                    });
+
+                    employeeSuggestXhr = $.ajax({
+                        url: `${baseUrl}users/searchEmployees`,
+                        method: 'GET',
+                        data: { search: search },
+                        success: function (response) {
+                            if (employeeSuggestRequestToken !== requestToken) {
+                                return;
+                            }
+                            const items = (response && response.success && Array.isArray(response.data)) ? response.data : [];
+                            renderMatches(items);
+                        },
+                        error: function (xhr, status) {
+                            if (status === 'abort') {
+                                return;
+                            }
+
+                            if (employeeSuggestRequestToken !== requestToken) {
+                                return;
+                            }
+
+                            $list.html(`
+                                <button type="button" class="list-group-item list-group-item-action employee-suggestion-item disabled">
+                                    <div class="employee-suggestion-name">Search unavailable</div>
+                                    <div class="employee-suggestion-meta">Please try again in a moment.</div>
+                                </button>
+                            `).removeClass('d-none');
+                        }
+                    });
+                }, 180);
+            }
+
+            function clearEmployeeLookupState() {
+                if (employeeSuggestTimer) {
+                    clearTimeout(employeeSuggestTimer);
+                    employeeSuggestTimer = null;
+                }
+
+                if (employeeSuggestXhr && employeeSuggestXhr.readyState !== 4) {
+                    employeeSuggestXhr.abort();
+                }
+
+                employeeSuggestRequestToken = '';
+                $('#attendantEmployeeSearch').val('').prop('readonly', false);
+                $('#attendantFirstName').val('').prop('readonly', false);
+                $('#attendantLastName').val('').prop('readonly', false);
+                $('#attendantEmail').val('').prop('readonly', false);
+                $('#attendantEmployeeSuggestions').addClass('d-none').empty();
+            }
+
+            $(document).off('input.usersSubscriberSuggest', '#userStudentId').on('input.usersSubscriberSuggest', '#userStudentId', function () {
+                renderSubscriberSuggestionsFromApi($(this).val());
             });
 
-            $(document).off('keypress.usersLookup', '#userStudentId').on('keypress.usersLookup', '#userStudentId', function (e) {
-                if (e.which === 13) {
-                    e.preventDefault();
-                    lookupSubscriberFromMis($(this).val());
+            $(document).off('focus.usersSubscriberSuggest', '#userStudentId').on('focus.usersSubscriberSuggest', '#userStudentId', function () {
+                renderSubscriberSuggestionsFromApi($(this).val());
+            });
+
+            $(document).off('input.usersSubscriberSuggestNames', '#userFirstName, #userLastName').on('input.usersSubscriberSuggestNames', '#userFirstName, #userLastName', function () {
+                const firstName = $('#userFirstName').val().trim();
+                const lastName = $('#userLastName').val().trim();
+                const $studentId = $('#userStudentId');
+
+                if (!$studentId.is(':focus') && firstName && lastName) {
+                    $studentId.val(suggestSubscriberExternalId(firstName, lastName));
+                }
+            });
+
+            $(document).off('mousedown.usersSubscriberSuggestion', '.subscriber-suggestion-item').on('mousedown.usersSubscriberSuggestion', '.subscriber-suggestion-item:not(.disabled)', function (e) {
+                e.preventDefault();
+
+                populateSubscriberSuggestion({
+                    user_id: $(this).data('user-id'),
+                    first_name: $(this).data('first-name'),
+                    last_name: $(this).data('last-name'),
+                    email: $(this).data('email'),
+                    external_user_id: $(this).data('external-id')
+                });
+            });
+
+            $(document).off('mousedown.usersSubscriberHide').on('mousedown.usersSubscriberHide', function (e) {
+                if (!$(e.target).closest('#userStudentIdSuggestions, #userStudentId, .subscriber-id-autocomplete').length) {
+                    hideSubscriberSuggestions();
+                }
+            });
+
+            $(document).off('input.usersEmployeeSuggest', '#attendantEmployeeSearch').on('input.usersEmployeeSuggest', '#attendantEmployeeSearch', function () {
+                renderEmployeeSuggestionsFromApi($(this).val());
+            });
+
+            $(document).off('focus.usersEmployeeSuggest', '#attendantEmployeeSearch').on('focus.usersEmployeeSuggest', '#attendantEmployeeSearch', function () {
+                renderEmployeeSuggestionsFromApi($(this).val());
+            });
+
+            $(document).off('mousedown.usersEmployeeSuggestion', '.employee-suggestion-item').on('mousedown.usersEmployeeSuggestion', '.employee-suggestion-item:not(.disabled)', function (e) {
+                e.preventDefault();
+
+                populateEmployeeSuggestion({
+                    first_name: $(this).data('first-name'),
+                    last_name: $(this).data('last-name'),
+                    email: $(this).data('email')
+                });
+            });
+
+            $(document).off('mousedown.usersEmployeeHide').on('mousedown.usersEmployeeHide', function (e) {
+                if (!$(e.target).closest('#attendantEmployeeSuggestions, #attendantEmployeeSearch, .employee-name-autocomplete').length) {
+                    hideEmployeeSuggestions();
                 }
             });
 
@@ -2224,16 +2794,18 @@ if (typeof window.initPageScripts === 'function') {
                 let title = '';
                 if (entity === 'users') {
                     title = action === 'add' ? 'Add New Subscriber' : 'Edit Subscriber';
+                    $('#crudFormModal').removeClass('mode-add').addClass('mode-edit');
                     $('.entity-fields').hide(); // Hide all entity fields
                     $('.fields-users').show(); // Show only user fields
                     $('.password-field').hide();
 
                     if (action === 'edit' && data) {
-                        $('#userStudentId').val(data.external_user_id || '').prop('readonly', true);
-                        $('#userFirstName').val(data.first_name).prop('readonly', true);
-                        $('#userLastName').val(data.last_name).prop('readonly', true);
-                        $('#userEmail').val(data.email).prop('readonly', true);
-                        $('#userHourBalance').val(data.hour_balance || 0);
+                        $('.edit-only').show();
+                        $('#userStudentId').val(String(data.external_user_id || '')).prop('readonly', true);
+                        $('#userFirstName').val(String(data.first_name || '')).prop('readonly', true);
+                        $('#userLastName').val(String(data.last_name || '')).prop('readonly', true);
+                        $('#userEmail').val(String(data.email || '')).prop('readonly', true);
+                        $('#userTokens').val(data.tokens ?? data.hour_balance ?? 0);
                         $('#userTypeId').val(1);
 
                         if (data.status === 'suspended') {
@@ -2242,16 +2814,17 @@ if (typeof window.initPageScripts === 'function') {
                             $('#userSuspendAccount').prop('checked', false);
                         }
                     } else {
+                        $('#crudFormModal').removeClass('mode-edit').addClass('mode-add');
                         $('#userFirstName').val('');
                         $('#userLastName').val('');
                         $('#userEmail').val('');
-                        $('#userStudentId').val('').prop('readonly', false);
-                        $('#userFirstName').prop('readonly', true);
-                        $('#userLastName').prop('readonly', true);
-                        $('#userEmail').prop('readonly', true);
-                        $('#userHourBalance').val(0);
+                        $('#userStudentId').val('').prop('readonly', false).data('autoSuggest', true);
+                        $('#userFirstName, #userLastName, #userEmail').prop('readonly', true);
+                        $('#userTokens').val(0);
                         $('#userTypeId').val(1);
                         $('#userSuspendAccount').prop('checked', false);
+                        $('#userTokens, #userSuspendAccount').closest('.edit-only').hide();
+                        renderSubscriberSuggestionsFromApi($('#userStudentId').val());
                     }
 
                     $('#userTypeId').val(1);
@@ -2259,9 +2832,12 @@ if (typeof window.initPageScripts === 'function') {
                     $('#staticRoleWarning').show();
                 } else {
                     // Staff (Admins or Attendants)
+                    $('#crudFormModal').removeClass('mode-edit').addClass('mode-add');
                     $('.entity-fields').hide(); // Hide all entity fields
                     $('.fields-attendants').show(); // Show only attendant fields
                     $('.password-field').show();
+                    clearEmployeeLookupState();
+                    $('#attendantEmployeeSearch, #attendantFirstName, #attendantLastName, #attendantEmail').prop('readonly', false);
 
                     // Populate Role Dropdown (hidden if static)
                     const roleOptions = '<option value="">Select Role</option>' +
@@ -2344,10 +2920,14 @@ if (typeof window.initPageScripts === 'function') {
                     }
 
                     if (action === 'edit' && data) {
+                        $('#crudFormModal').removeClass('mode-add').addClass('mode-edit');
+                        $('.edit-only').show();
                         $('#attendantFirstName').val(data.first_name);
                         $('#attendantLastName').val(data.last_name);
                         $('#attendantEmail').val(data.email);
+                        $('#attendantEmployeeSearch').val([String(data.first_name || '').trim(), String(data.last_name || '').trim()].filter(Boolean).join(' '));
                         $('#attendantAssignedArea').val(data.assigned_area_id);
+                        $('#attendantEmployeeSearch, #attendantFirstName, #attendantLastName, #attendantEmail').prop('readonly', true);
 
                         if (data.status === 'suspended') {
                             $('#attendantSuspendAccount').prop('checked', true);
@@ -2360,11 +2940,22 @@ if (typeof window.initPageScripts === 'function') {
                             $('#attendantAssignedAreaContainer').show();
                         }
                         $('#attendantSuspendAccount').prop('checked', false); // Default to not suspended for add
+                        $('#attendantEmployeeSearch').val('').prop('readonly', false);
+                        $('#attendantFirstName, #attendantLastName, #attendantEmail').val('').prop('readonly', true);
                     }
                 }
 
                 $('#crudModalTitleText').text(title);
                 $('#crudSubmitText').text(action === 'add' ? 'Add' : 'Update');
+
+                if (entity === 'users' && action === 'add') {
+                    $('#userStudentId').data('autoSuggest', true);
+                    renderSubscriberSuggestionsFromApi($('#userStudentId').val());
+                } else if (entity === 'attendants' && action === 'add') {
+                    if (String(forceTypeId || $('#hiddenUserTypeId').val() || $('#attendantUserTypeId').val() || '') === '3') {
+                        $('#attendantEmployeeSearch').prop('readonly', false).trigger('focus');
+                    }
+                }
 
                 // Show Modal
                 const modal = new bootstrap.Modal(document.getElementById('crudFormModal'));
@@ -2385,6 +2976,7 @@ if (typeof window.initPageScripts === 'function') {
                 delete window.pendingCrudFormData;
                 delete window.pendingCrudAction;
                 clearSubscriberLookupState();
+                clearEmployeeLookupState();
 
                 // Remove any dynamically added hidden inputs for user_type_id
                 $('#hiddenUserTypeId').remove();
