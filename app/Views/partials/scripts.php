@@ -113,6 +113,9 @@ if (typeof bootstrap === 'undefined') {
 <!-- Logs.js (load globally so it's available for AJAX-loaded logs content) -->
 <script src="<?= base_url('assets/js/logs.js') ?>"></script>
 
+<!-- TapPark controls: custom select/date UI for pages and modals -->
+<script src="<?= base_url('assets/js/tappark-controls.js') ?>?v=<?= @filemtime(FCPATH . 'assets/js/tappark-controls.js') ?: time() ?>"></script>
+
 <!-- Main JavaScript -->
 <script>
     

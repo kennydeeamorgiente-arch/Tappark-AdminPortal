@@ -111,22 +111,62 @@
 
                 <div class="flex-grow-1" style="min-width: 200px;">
                     <label class="form-label"><i class="fas fa-filter me-2"></i>Rating</label>
-                    <select class="form-select" id="feedbackRatingFilter">
-                        <option value="">All Ratings</option>
-                        <option value="5" <?= (string)($rating ?? '') === '5' ? 'selected' : '' ?>>5 Stars</option>
-                        <option value="4" <?= (string)($rating ?? '') === '4' ? 'selected' : '' ?>>4 Stars</option>
-                        <option value="3" <?= (string)($rating ?? '') === '3' ? 'selected' : '' ?>>3 Stars</option>
-                        <option value="2" <?= (string)($rating ?? '') === '2' ? 'selected' : '' ?>>2 Stars</option>
-                        <option value="1" <?= (string)($rating ?? '') === '1' ? 'selected' : '' ?>>1 Star</option>
-                    </select>
+                    <?php
+                        $selectedRating = (string)($rating ?? '');
+                        $ratingOptions = [
+                            '' => 'All Ratings',
+                            '5' => '5 Stars',
+                            '4' => '4 Stars',
+                            '3' => '3 Stars',
+                            '2' => '2 Stars',
+                            '1' => '1 Star',
+                        ];
+                    ?>
+                    <input type="hidden" id="feedbackRatingFilter" value="<?= esc($selectedRating) ?>">
+                    <div class="tappark-select" id="feedbackRatingSelect">
+                        <button type="button"
+                            class="tappark-select-toggle"
+                            id="feedbackRatingSelectToggle"
+                            aria-haspopup="listbox"
+                            aria-expanded="false">
+                            <span id="feedbackRatingSelectLabel"><?= esc($ratingOptions[$selectedRating] ?? 'All Ratings') ?></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="tappark-select-menu" role="listbox" aria-labelledby="feedbackRatingSelectToggle">
+                            <?php foreach ($ratingOptions as $value => $label): ?>
+                                <button type="button"
+                                    class="tappark-select-option<?= $selectedRating === (string)$value ? ' active' : '' ?>"
+                                    role="option"
+                                    data-value="<?= esc($value) ?>"
+                                    data-label="<?= esc($label) ?>"
+                                    aria-selected="<?= $selectedRating === (string)$value ? 'true' : 'false' ?>">
+                                    <?= esc($label) ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex-grow-1" style="min-width: 150px;">
                     <label class="form-label"><i class="fas fa-calendar-alt me-2"></i>Date From</label>
-                    <input type="date" class="form-control" id="feedbackDateFrom" value="<?= esc((string)($date_from ?? '')) ?>">
+                    <input type="hidden" id="feedbackDateFrom" value="<?= esc((string)($date_from ?? '')) ?>">
+                    <div class="tappark-date" data-date-target="feedbackDateFrom">
+                        <button type="button" class="tappark-date-toggle" aria-haspopup="dialog" aria-expanded="false">
+                            <span class="tappark-date-label">mm/dd/yyyy</span>
+                            <i class="fas fa-calendar-alt"></i>
+                        </button>
+                        <div class="tappark-date-menu" role="dialog" aria-label="Date From calendar"></div>
+                    </div>
                 </div>
                 <div class="flex-grow-1" style="min-width: 150px;">
                     <label class="form-label"><i class="fas fa-calendar-alt me-2"></i>Date To</label>
-                    <input type="date" class="form-control" id="feedbackDateTo" value="<?= esc((string)($date_to ?? '')) ?>">
+                    <input type="hidden" id="feedbackDateTo" value="<?= esc((string)($date_to ?? '')) ?>">
+                    <div class="tappark-date" data-date-target="feedbackDateTo">
+                        <button type="button" class="tappark-date-toggle" aria-haspopup="dialog" aria-expanded="false">
+                            <span class="tappark-date-label">mm/dd/yyyy</span>
+                            <i class="fas fa-calendar-alt"></i>
+                        </button>
+                        <div class="tappark-date-menu" role="dialog" aria-label="Date To calendar"></div>
+                    </div>
                 </div>
                 
                 <!-- Action Buttons: Apply & Clear -->
@@ -171,6 +211,11 @@
     const $dateFrom = $('#feedbackDateFrom');
     const $dateTo = $('#feedbackDateTo');
     const $clear = $('#clearFeedbackFiltersBtn');
+    const $ratingSelect = $('#feedbackRatingSelect');
+    const $ratingToggle = $('#feedbackRatingSelectToggle');
+    const $ratingLabel = $('#feedbackRatingSelectLabel');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const shortDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
     function getBaseUrl() {
         return (typeof window.APP_BASE_URL !== 'undefined' && window.APP_BASE_URL) ? window.APP_BASE_URL : (typeof window.BASE_URL !== 'undefined' ? window.BASE_URL : '');
@@ -269,6 +314,188 @@
     });
 
     // --- UI Logic for Filters ---
+    function closeRatingSelect() {
+        $ratingSelect.removeClass('open');
+        $ratingToggle.attr('aria-expanded', 'false');
+    }
+
+    function setRatingSelect(value, label) {
+        $rating.val(value || '');
+        $ratingLabel.text(label || 'All Ratings');
+        $ratingSelect.find('.tappark-select-option').each(function() {
+            const isActive = String($(this).data('value') || '') === String(value || '');
+            $(this).toggleClass('active', isActive).attr('aria-selected', isActive ? 'true' : 'false');
+        });
+    }
+
+    $ratingToggle.off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const willOpen = !$ratingSelect.hasClass('open');
+        $('.tappark-select.open').removeClass('open').find('.tappark-select-toggle').attr('aria-expanded', 'false');
+        $ratingSelect.toggleClass('open', willOpen);
+        $ratingToggle.attr('aria-expanded', willOpen ? 'true' : 'false');
+    });
+
+    $ratingSelect.find('.tappark-select-option').off('click').on('click', function() {
+        setRatingSelect($(this).data('value') || '', $(this).data('label') || 'All Ratings');
+        closeRatingSelect();
+    });
+
+    $(document).off('click.feedbackRatingSelect').on('click.feedbackRatingSelect', function(e) {
+        if (!$(e.target).closest('#feedbackRatingSelect').length) {
+            closeRatingSelect();
+        }
+    });
+
+    $ratingToggle.off('keydown').on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeRatingSelect();
+        }
+    });
+
+    function parseIsoDate(value) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+        if (!match) return null;
+        return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+
+    function toIsoDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function toDisplayDate(value) {
+        const date = parseIsoDate(value);
+        if (!date) return 'mm/dd/yyyy';
+        return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
+    }
+
+    function closeDatePickers() {
+        $('.tappark-date.open').removeClass('open').find('.tappark-date-toggle').attr('aria-expanded', 'false');
+    }
+
+    function renderDatePicker($picker) {
+        const targetId = $picker.data('date-target');
+        const $input = $('#' + targetId);
+        const selected = parseIsoDate($input.val());
+        let viewDate = $picker.data('viewDate');
+        if (!(viewDate instanceof Date)) {
+            viewDate = selected ? new Date(selected) : new Date();
+        }
+
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const previousMonthDays = new Date(year, month, 0).getDate();
+        const todayIso = toIsoDate(new Date());
+        const selectedIso = selected ? toIsoDate(selected) : '';
+        const cells = [];
+
+        for (let i = firstDay - 1; i >= 0; i--) {
+            cells.push({ day: previousMonthDays - i, muted: true, date: new Date(year, month - 1, previousMonthDays - i) });
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            cells.push({ day, muted: false, date: new Date(year, month, day) });
+        }
+
+        while (cells.length % 7 !== 0) {
+            const nextDay = cells.length - firstDay - daysInMonth + 1;
+            cells.push({ day: nextDay, muted: true, date: new Date(year, month + 1, nextDay) });
+        }
+
+        const dayHeaders = shortDays.map(day => `<span class="tappark-date-weekday">${day}</span>`).join('');
+        const dayButtons = cells.map(cell => {
+            const iso = toIsoDate(cell.date);
+            const classes = [
+                'tappark-date-day',
+                cell.muted ? 'muted' : '',
+                iso === selectedIso ? 'selected' : '',
+                iso === todayIso ? 'today' : ''
+            ].filter(Boolean).join(' ');
+            return `<button type="button" class="${classes}" data-date="${iso}">${cell.day}</button>`;
+        }).join('');
+
+        $picker.find('.tappark-date-label').text(toDisplayDate($input.val()));
+        $picker.find('.tappark-date-menu').html(`
+            <div class="tappark-date-header">
+                <button type="button" class="tappark-date-nav" data-date-nav="-1" aria-label="Previous month"><i class="fas fa-chevron-left"></i></button>
+                <div class="tappark-date-title">${monthNames[month]} ${year}</div>
+                <button type="button" class="tappark-date-nav" data-date-nav="1" aria-label="Next month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="tappark-date-grid">${dayHeaders}${dayButtons}</div>
+            <div class="tappark-date-footer">
+                <button type="button" class="tappark-date-action" data-date-clear>Clear</button>
+                <button type="button" class="tappark-date-action" data-date-today>Today</button>
+            </div>
+        `);
+        $picker.data('viewDate', viewDate);
+    }
+
+    $('.tappark-date').each(function() {
+        renderDatePicker($(this));
+    });
+
+    function refreshDatePickers() {
+        $('.tappark-date').each(function() {
+            renderDatePicker($(this));
+        });
+    }
+
+    $(document).off('click.tapparkDateToggle').on('click.tapparkDateToggle', '.tappark-date-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $picker = $(this).closest('.tappark-date');
+        const willOpen = !$picker.hasClass('open');
+        closeDatePickers();
+        closeRatingSelect();
+        if (willOpen) {
+            renderDatePicker($picker);
+            $picker.addClass('open');
+            $(this).attr('aria-expanded', 'true');
+        }
+    });
+
+    $(document).off('click.tapparkDateDay').on('click.tapparkDateDay', '.tappark-date-day', function() {
+        const $picker = $(this).closest('.tappark-date');
+        $('#' + $picker.data('date-target')).val($(this).data('date'));
+        $picker.data('viewDate', parseIsoDate($(this).data('date')));
+        renderDatePicker($picker);
+        closeDatePickers();
+    });
+
+    $(document).off('click.tapparkDateNav').on('click.tapparkDateNav', '.tappark-date-nav', function() {
+        const $picker = $(this).closest('.tappark-date');
+        const viewDate = $picker.data('viewDate') instanceof Date ? $picker.data('viewDate') : new Date();
+        $picker.data('viewDate', new Date(viewDate.getFullYear(), viewDate.getMonth() + Number($(this).data('date-nav')), 1));
+        renderDatePicker($picker);
+    });
+
+    $(document).off('click.tapparkDateClear').on('click.tapparkDateClear', '[data-date-clear]', function() {
+        const $picker = $(this).closest('.tappark-date');
+        $('#' + $picker.data('date-target')).val('');
+        renderDatePicker($picker);
+        closeDatePickers();
+    });
+
+    $(document).off('click.tapparkDateToday').on('click.tapparkDateToday', '[data-date-today]', function() {
+        const $picker = $(this).closest('.tappark-date');
+        const today = new Date();
+        $('#' + $picker.data('date-target')).val(toIsoDate(today));
+        $picker.data('viewDate', today);
+        renderDatePicker($picker);
+        closeDatePickers();
+    });
+
+    $(document).off('click.tapparkDateOutside').on('click.tapparkDateOutside', function(e) {
+        if (!$(e.target).closest('.tappark-date').length) {
+            closeDatePickers();
+        }
+    });
     
     // Apply Button Click
     $('#applyFeedbackFiltersBtn').off('click').on('click', function() {
@@ -284,9 +511,10 @@
 
     // Clear Button Click
     $clear.off('click').on('click', function() {
-        $rating.val('');
+        setRatingSelect('', 'All Ratings');
         $dateFrom.val('');
         $dateTo.val('');
+        refreshDatePickers();
         
         // Hide actions since we reset
         // Or trigger update immediately for Clear
