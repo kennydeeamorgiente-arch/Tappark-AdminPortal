@@ -44,6 +44,14 @@ class MisApiService
         return $this->get('/student-search/', ['search' => trim($search)]);
     }
 
+    public function studentLogin(string $studentId, string $password): array
+    {
+        return $this->request('POST', '/student-login', [
+            'student_id' => trim($studentId),
+            'password' => $password,
+        ]);
+    }
+
     public function getEmployee(string $employeeId): array
     {
         return $this->get('/employee/' . rawurlencode(trim($employeeId)));
@@ -52,6 +60,14 @@ class MisApiService
     public function searchEmployees(string $search): array
     {
         return $this->get('/employee-search/', ['search' => trim($search)]);
+    }
+
+    public function employeeLogin(string $employeeId, string $password): array
+    {
+        return $this->request('POST', '/employee-login', [
+            'employee_id' => trim($employeeId),
+            'password' => $password,
+        ]);
     }
 
     public function getDepartments(): array

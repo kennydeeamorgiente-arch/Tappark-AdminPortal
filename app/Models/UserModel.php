@@ -40,6 +40,16 @@ class UserModel extends Model
      */
     public function authenticate($email, $password)
     {
+        $email = strtolower(trim((string) $email));
+        $password = (string) $password;
+
+        if ($this->isDevelopmentSubscriberDebugAllowed()) {
+            $debugUser = $this->authenticateDevelopmentSubscriber($email, $password);
+            if ($debugUser) {
+                return $debugUser;
+            }
+        }
+
         // Find user by email with active status
         $user = $this->where('email', $email)
                      ->where('status', 'active')
@@ -58,6 +68,63 @@ class UserModel extends Model
 
         // Password doesn't match
         return false;
+    }
+
+    /**
+     * Allow local development subscriber login bypass for testing.
+     */
+    private function isDevelopmentSubscriberDebugAllowed(): bool
+    {
+        if (ENVIRONMENT !== 'production') {
+            return true;
+        }
+
+        $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+        return $host === 'localhost'
+            || $host === '127.0.0.1'
+            || $host === '::1'
+            || str_contains($host, 'localhost');
+    }
+
+    /**
+     * Authenticate a subscriber using local debug credentials.
+     */
+    private function authenticateDevelopmentSubscriber(string $email, string $password): ?array
+    {
+        $debugEmail = strtolower(trim((string) (env('TAPPARK_DEV_SUBSCRIBER_EMAIL') ?: env('tappark.devSubscriberEmail') ?: 'dev.subscriber@tappark.local')));
+        $debugPassword = (string) (env('TAPPARK_DEV_SUBSCRIBER_PASSWORD') ?: env('tappark.devSubscriberPassword') ?: 'DevSubscriber123!');
+        $debugFirstName = (string) (env('TAPPARK_DEV_SUBSCRIBER_FIRST_NAME') ?: env('tappark.devSubscriberFirstName') ?: 'Dev');
+        $debugLastName = (string) (env('TAPPARK_DEV_SUBSCRIBER_LAST_NAME') ?: env('tappark.devSubscriberLastName') ?: 'Subscriber');
+        $debugExternalId = (string) (env('TAPPARK_DEV_SUBSCRIBER_EXTERNAL_ID') ?: env('tappark.devSubscriberExternalId') ?: 'DEV-SUBSCRIBER');
+
+        if ($email !== $debugEmail || !hash_equals($debugPassword, $password)) {
+            return null;
+        }
+
+        $existing = $this->where('email', $debugEmail)->first();
+        if ($existing) {
+            return $existing + [
+                'external_user_id' => $existing['external_user_id'] ?? $debugExternalId,
+                'first_name' => $existing['first_name'] ?? $debugFirstName,
+                'last_name' => $existing['last_name'] ?? $debugLastName,
+                'email' => $existing['email'] ?? $debugEmail,
+                'user_type_id' => $existing['user_type_id'] ?? self::ROLE_SUBSCRIBER,
+                'status' => $existing['status'] ?? 'active',
+                'tokens' => $existing['tokens'] ?? 0,
+            ];
+        }
+
+        return [
+            'user_id' => 900000002,
+            'external_user_id' => $debugExternalId,
+            'first_name' => $debugFirstName,
+            'last_name' => $debugLastName,
+            'email' => $debugEmail,
+            'user_type_id' => self::ROLE_SUBSCRIBER,
+            'status' => 'active',
+            'tokens' => 0,
+            'profile_picture' => null,
+        ];
     }
 
     /**

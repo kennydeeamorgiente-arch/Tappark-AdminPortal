@@ -80,8 +80,8 @@ class Filters extends BaseFilters
         'before' => [
             'securityheaders',  // Apply security headers to all requests
             // 'honeypot',
-            'csrf' => ['except' => ['login', 'login/process', 'logout']],
-            'adminauth' => ['except' => ['login', 'login/process', 'logout']],
+            'csrf' => ['except' => ['login', 'login/process', 'login/debugSubscriberLogin', 'logout']],
+            'adminauth' => ['except' => ['login', 'login/process', 'login/debugSubscriberLogin', 'logout']],
             // 'invalidchars',
         ],
         'after'  => [

@@ -10,6 +10,7 @@ $routes->get('/', 'Home::index');
 // Login routes (must come before generic routes)
 $routes->get('login', 'Login::index');
 $routes->post('login/process', 'Login::process');
+$routes->post('login/debugSubscriberLogin', 'Login::debugSubscriberLogin');
 $routes->get('logout', 'Login::logout');
 
 // Profile routes
@@ -44,6 +45,7 @@ $routes->get('users/getUserTypes', 'Users::getUserTypes');
 $routes->get('users/lookupStudent', 'Users::lookupStudent');
 $routes->get('users/searchStudents', 'Users::searchStudents');
 $routes->get('users/searchEmployees', 'Users::searchEmployees');
+$routes->post('users/debugMisLogin', 'Users::debugMisLogin');
 $routes->get('users/importTemplate', 'Users::importTemplate');
 $routes->post('users/import', 'Users::import');
 $routes->get('users/getDepartments', 'Users::getDepartments');

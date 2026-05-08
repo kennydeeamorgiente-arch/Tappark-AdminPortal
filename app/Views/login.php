@@ -42,14 +42,14 @@
                     
                     <!-- Login Form -->
                     <?= form_open('login/process', ['id' => 'loginForm']) ?>
-                        <!-- Email Input -->
+                        <!-- ID Input -->
                         <div class="mb-3">
-                            <label for="email" class="form-label">
-                                <i class="fas fa-envelope me-2"></i>Email Address
+                            <label for="identifier" class="form-label">
+                                <i class="fas fa-id-card me-2"></i>ID
                             </label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required autofocus>
-                            <div class="invalid-feedback d-block" id="email-error" style="display: none !important;"></div>
-                            <div class="text-danger small mt-1" id="email-error-text" style="display: none;"></div>
+                            <input type="text" class="form-control" id="identifier" name="identifier" placeholder="Enter your ID" required autofocus autocomplete="username">
+                            <div class="invalid-feedback d-block" id="identifier-error" style="display: none !important;"></div>
+                            <div class="text-danger small mt-1" id="identifier-error-text" style="display: none;"></div>
                         </div>
                         
                         <!-- Password Input -->
@@ -79,6 +79,21 @@
                     
                     <!-- Alert Messages Container (for displaying success/error messages) -->
                     <div id="alertContainer" class="mt-3"></div>
+
+                    <?php if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production'): ?>
+                    <div class="mt-3 p-3 border rounded-3 bg-light" id="subscriberDebugPanel">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="text-maroon">Subscriber Debug</strong>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="debugSubscriberBtn">
+                                Run Debug
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mb-2">
+                            Tests the MIS student login and checks the local database record for the ID you entered.
+                        </small>
+                        <pre class="mb-0 small bg-dark text-light p-2 rounded" id="debugSubscriberOutput" style="min-height: 110px; white-space: pre-wrap;">No debug run yet.</pre>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -126,7 +141,7 @@
         </div>
     </div>
 
-    <!-- Invalid Credentials Modal (for wrong email/password) -->
+    <!-- Invalid Credentials Modal (for wrong ID/password) -->
     <div class="modal fade" id="invalidCredentialsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -151,7 +166,7 @@
                     <!-- Message -->
                     <h5 class="mb-2 fw-semibold">Login Failed</h5>
                     <p class="text-muted mb-1">
-                        The email or password you entered is incorrect.
+                        The ID or password you entered is incorrect.
                     </p>
                     <p class="text-muted small mb-0">
                         Please check your credentials and try again.
@@ -273,7 +288,7 @@
 
     /* Error message labels - styled like validation errors */
     #password-error-text,
-    #email-error-text {
+    #identifier-error-text {
         color: #dc3545;
         font-size: 0.875rem;
         margin-top: 0.25rem;
@@ -282,7 +297,7 @@
     }
 
     [data-bs-theme="dark"] #password-error-text,
-    [data-bs-theme="dark"] #email-error-text {
+    [data-bs-theme="dark"] #identifier-error-text {
         color: #ff5252;
     }
 
@@ -344,6 +359,49 @@
                     passwordIcon.removeClass('fa-eye-slash').addClass('fa-eye');
                 }
             });
+
+            $('#debugSubscriberBtn').on('click', function() {
+                const identifier = $('#identifier').val().trim();
+                const password = $('#password').val();
+                const $output = $('#debugSubscriberOutput');
+
+                if (!identifier || !password) {
+                    $output.text('Enter an ID and password first.');
+                    return;
+                }
+
+                $output.text('Running debug check...');
+
+                $.ajax({
+                    url: '<?= base_url('login/debugSubscriberLogin') ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    data: {
+                        identifier: identifier,
+                        password: password,
+                        csrf_test_name: $('input[name="csrf_test_name"]').val()
+                    },
+                    success: function(response) {
+                        $output.text(JSON.stringify(response, null, 2));
+                    },
+                    error: function(xhr) {
+                        let response = xhr.responseJSON;
+                        if (!response && xhr.responseText) {
+                            try {
+                                response = JSON.parse(xhr.responseText);
+                            } catch (e) {}
+                        }
+
+                        $output.text(JSON.stringify(response || {
+                            success: false,
+                            message: xhr.status + ' ' + (xhr.statusText || 'Request failed')
+                        }, null, 2));
+                    }
+                });
+            });
             
             // Form submission handler with validation and AJAX
             $('#loginForm').on('submit', function(e) {
@@ -353,7 +411,7 @@
                 $('.form-control').removeClass('is-invalid');
                 $('.invalid-feedback').text('').hide();
                 $('#password-error-text').text('').hide();
-                $('#email-error-text').text('').hide();
+                $('#identifier-error-text').text('').hide();
                 $('#alertContainer').empty();
                 
                 // Show loading state
@@ -362,7 +420,7 @@
                 
                 // Get form data
                 const formData = {
-                    email: $('#email').val().trim(),
+                    identifier: $('#identifier').val().trim(),
                     password: $('#password').val()
                 };
                 
@@ -375,14 +433,10 @@
                 // Client-side validation
                 let hasError = false;
                 
-                // Validate email
-                if (!formData.email) {
-                    $('#email').addClass('is-invalid');
-                    $('#email-error-text').text('Email is required').show();
-                    hasError = true;
-                } else if (!isValidEmail(formData.email)) {
-                    $('#email').addClass('is-invalid');
-                    $('#email-error-text').text('Please enter a valid email address').show();
+                // Validate identifier
+                if (!formData.identifier) {
+                    $('#identifier').addClass('is-invalid');
+                    $('#identifier-error-text').text('ID is required').show();
                     hasError = true;
                 }
                 
@@ -434,11 +488,11 @@
                             }
                             
                             // Show error as label below password field (like validation errors)
-                            $('#email').addClass('is-invalid');
+                            $('#identifier').addClass('is-invalid');
                             $('#password').addClass('is-invalid');
-                            $('#email-error').text('').hide();
+                            $('#identifier-error').text('').hide();
                             $('#password-error').text('').hide();
-                            $('#email-error-text').text('').hide();
+                            $('#identifier-error-text').text('').hide();
                             $('#password-error-text').text(errorMessage).show();
                             
                             // Reset button state
@@ -465,11 +519,11 @@
                             }
                             
                             // Show error as label below password field (like validation errors)
-                            $('#email').addClass('is-invalid');
+                            $('#identifier').addClass('is-invalid');
                             $('#password').addClass('is-invalid');
-                            $('#email-error').text('').hide();
+                            $('#identifier-error').text('').hide();
                             $('#password-error').text('').hide();
-                            $('#email-error-text').text('').hide();
+                            $('#identifier-error-text').text('').hide();
                             $('#password-error-text').text(errorMessage).show();
                             
                             // Reset button state
@@ -501,8 +555,8 @@
                                     $('#' + field).addClass('is-invalid');
                                     if (field === 'password') {
                                         $('#password-error-text').text(response.errors[field]).show();
-                                    } else if (field === 'email') {
-                                        $('#email-error-text').text(response.errors[field]).show();
+                                    } else if (field === 'identifier' || field === 'email') {
+                                        $('#identifier-error-text').text(response.errors[field]).show();
                                     } else {
                                         $('#' + field + '-error').text(response.errors[field]).show();
                                     }
@@ -550,13 +604,13 @@
                             // Show error message with text labels
                             let errorMessage = response.message || 'An error occurred. Please try again.';
                             
-                            // If it's a password/email error, show it on the fields
-                            if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('invalid')) {
-                                $('#email').addClass('is-invalid');
+                            // If it's a password/id error, show it on the fields
+                            if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('id') || errorMessage.toLowerCase().includes('invalid')) {
+                                $('#identifier').addClass('is-invalid');
                                 $('#password').addClass('is-invalid');
-                                $('#email-error').text('').hide();
+                                $('#identifier-error').text('').hide();
                                 $('#password-error').text('').hide();
-                                $('#email-error-text').text('').hide();
+                                $('#identifier-error-text').text('').hide();
                                 $('#password-error-text').text(errorMessage).show();
                             }
                             
@@ -598,13 +652,13 @@
                                 errorMessage = 'Server error. Please try again later.';
                             }
                             
-                            // Show error message with text labels for password/email errors
-                            if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('invalid') || errorMessage.toLowerCase().includes('access denied')) {
-                                $('#email').addClass('is-invalid');
+                            // Show error message with text labels for password/id errors
+                            if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('id') || errorMessage.toLowerCase().includes('invalid') || errorMessage.toLowerCase().includes('access denied')) {
+                                $('#identifier').addClass('is-invalid');
                                 $('#password').addClass('is-invalid');
-                                $('#email-error').text('').hide();
+                                $('#identifier-error').text('').hide();
                                 $('#password-error').text('').hide();
-                                $('#email-error-text').text('').hide();
+                                $('#identifier-error-text').text('').hide();
                                 $('#password-error-text').text(errorMessage).show();
                             }
                             
@@ -615,12 +669,6 @@
                     }
                 });
             });
-            
-            // Email validation helper function
-            function isValidEmail(email) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return emailRegex.test(email);
-            }
             
             // Show alert message
             function showAlert(type, message) {

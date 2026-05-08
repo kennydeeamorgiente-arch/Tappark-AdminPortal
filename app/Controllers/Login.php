@@ -78,14 +78,15 @@ class Login extends BaseController
     /**
      * Create or refresh the local development admin account and return it.
      */
-    private function getDevelopmentAdminUser(string $email, string $password): ?array
+    private function getDevelopmentAdminUser(string $identifier, string $password): ?array
     {
         if (!$this->isDevelopmentAdminAllowed()) {
             return null;
         }
 
         $credentials = $this->getDevelopmentAdminCredentials();
-        if (strtolower(trim($email)) !== $credentials['email']) {
+        $identifier = strtolower(trim($identifier));
+        if ($identifier !== $credentials['email'] && $identifier !== strtolower(trim($credentials['external_user_id']))) {
             return null;
         }
 
@@ -213,20 +214,19 @@ class Login extends BaseController
         }
 
         // Get validated data
-        $email = $this->request->getPost('email');
+        $identifier = trim((string) ($this->request->getPost('identifier') ?? $this->request->getPost('email') ?? ''));
         $password = $this->request->getPost('password');
 
         if ($this->isDevelopmentAdminAllowed()) {
-            $developmentAdmin = $this->getDevelopmentAdminUser($email, $password);
+            $developmentAdmin = $this->getDevelopmentAdminUser($identifier, $password);
             if ($developmentAdmin) {
                 return $this->finalizeAdminLogin($developmentAdmin, null, true);
             }
         }
 
         // Rate limiting check
-        $email = $this->request->getPost('email');
-        $rateLimitKey = 'login_attempt_' . md5($email);
-        $lockoutKey = 'login_lockout_' . md5($email);
+        $rateLimitKey = 'login_attempt_' . md5($identifier);
+        $lockoutKey = 'login_lockout_' . md5($identifier);
         $attemptCount = cache()->get($rateLimitKey) ?? 0;
         $lockoutUntil = cache()->get($lockoutKey);
 
@@ -251,12 +251,11 @@ class Login extends BaseController
         
         // Set validation rules
         $validation->setRules([
-            'email' => 'required|valid_email',
+            'identifier' => 'required',
             'password' => 'required|min_length[6]'
         ], [
-            'email' => [
-                'required' => 'Email is required',
-                'valid_email' => 'Please enter a valid email address'
+            'identifier' => [
+                'required' => 'ID is required'
             ],
             'password' => [
                 'required' => 'Password is required',
@@ -274,9 +273,30 @@ class Login extends BaseController
         }
 
         // First, check if user exists (regardless of status)
-        $user = $this->userModel->where('email', $email)->first();
+        $user = $this->userModel->groupStart()
+            ->where('email', $identifier)
+            ->orWhere('external_user_id', $identifier)
+            ->groupEnd()
+            ->first();
+
+        $isMisVerifiedSubscriber = function () use ($identifier, $password): bool {
+            try {
+                $misResult = service('misApiService')->studentLogin($identifier, $password);
+                return (bool) ($misResult['success'] ?? false);
+            } catch (\Throwable $e) {
+                log_message('warning', 'MIS subscriber login fallback failed: ' . $e->getMessage());
+                return false;
+            }
+        };
 
         if (!$user) {
+            if ($isMisVerifiedSubscriber()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Access denied. Admin privileges required.'
+                ])->setStatusCode(403);
+            }
+
             // User doesn't exist - invalid email
             // Increment rate limit counter
             $newCount = $attemptCount + 1;
@@ -286,7 +306,7 @@ class Login extends BaseController
             }
             
             try {
-                log_failed_login($email);
+                log_failed_login($identifier);
             } catch (\Exception $e) {
                 log_message('error', 'Failed to log failed login attempt: ' . $e->getMessage());
             }
@@ -302,6 +322,13 @@ class Login extends BaseController
 
         // User exists - check if status is active
         if ($user['status'] !== 'active') {
+            if ($isMisVerifiedSubscriber()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Access denied. Admin privileges required.'
+                ])->setStatusCode(403);
+            }
+
             // Increment rate limit counter
             $newCount = $attemptCount + 1;
             cache()->save($rateLimitKey, $newCount, 1800);
@@ -310,7 +337,7 @@ class Login extends BaseController
             }
             
             try {
-                log_failed_login($email);
+                log_failed_login($identifier);
             } catch (\Exception $e) {
                 log_message('error', 'Failed to log failed login attempt: ' . $e->getMessage());
             }
@@ -344,6 +371,13 @@ class Login extends BaseController
         }
 
         if (!$passwordValid) {
+            if ($isMisVerifiedSubscriber()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Access denied. Admin privileges required.'
+                ])->setStatusCode(403);
+            }
+
             // Password is wrong - increment rate limit counter
             $newCount = $attemptCount + 1;
             cache()->save($rateLimitKey, $newCount, 1800);
@@ -352,7 +386,7 @@ class Login extends BaseController
             }
             
             try {
-                log_failed_login($email);
+                log_failed_login($identifier);
             } catch (\Exception $e) {
                 log_message('error', 'Failed to log failed login attempt: ' . $e->getMessage());
             }
@@ -377,6 +411,87 @@ class Login extends BaseController
         }
 
         return $this->finalizeAdminLogin($user, $rateLimitKey, false);
+    }
+
+    /**
+     * Temporary debug helper to inspect subscriber login behavior.
+     */
+    public function debugSubscriberLogin(): ResponseInterface
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid request method'
+            ])->setStatusCode(400);
+        }
+
+        if (!$this->isDevelopmentAdminAllowed()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debug login is only available on local development hosts.'
+            ])->setStatusCode(403);
+        }
+
+        $identifier = trim((string) ($this->request->getPost('identifier') ?? $this->request->getPost('email') ?? $this->request->getPost('student_id') ?? ''));
+        $password = (string) ($this->request->getPost('password') ?? '');
+
+        if ($identifier === '' || $password === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID and password are required.'
+            ])->setStatusCode(422);
+        }
+
+        $localUser = $this->userModel->db->table('users')
+            ->where('external_user_id', $identifier)
+            ->orWhere('email', $identifier)
+            ->get()
+            ->getRowArray();
+
+        $localPasswordMatches = false;
+        $localPasswordMode = 'missing';
+        if ($localUser) {
+            $storedPassword = (string) ($localUser['password'] ?? '');
+            if ($storedPassword !== '') {
+                if (str_starts_with($storedPassword, '$2y$') || str_starts_with($storedPassword, '$2a$')) {
+                    $localPasswordMode = 'bcrypt';
+                    $localPasswordMatches = password_verify($password, $storedPassword);
+                } else {
+                    $localPasswordMode = 'plain';
+                    $localPasswordMatches = hash_equals($storedPassword, $password);
+                }
+            }
+        }
+
+        $misService = service('misApiService');
+        $misResult = $misService->studentLogin($identifier, $password);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => [
+                'input' => [
+                    'identifier' => $identifier,
+                    'password_length' => strlen($password),
+                ],
+                'local' => [
+                    'found' => (bool) $localUser,
+                    'user_id' => $localUser['user_id'] ?? null,
+                    'external_user_id' => $localUser['external_user_id'] ?? null,
+                    'email' => $localUser['email'] ?? null,
+                    'status' => $localUser['status'] ?? null,
+                    'user_type_id' => $localUser['user_type_id'] ?? null,
+                    'access_level' => $localUser['access_level'] ?? ($localUser['user_type_id'] ?? null),
+                    'password_mode' => $localPasswordMode,
+                    'password_matches' => $localPasswordMatches,
+                ],
+                'mis' => [
+                    'success' => (bool) ($misResult['success'] ?? false),
+                    'http_status' => $misResult['http_status'] ?? null,
+                    'message' => $misResult['message'] ?? null,
+                    'data_present' => !empty($misResult['data']),
+                ],
+            ]
+        ]);
     }
 
     /**

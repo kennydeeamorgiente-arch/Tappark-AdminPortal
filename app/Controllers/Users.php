@@ -263,6 +263,42 @@ class Users extends BaseController
     }
 
     /**
+     * Debug MIS login for a student or employee.
+     */
+    public function debugMisLogin()
+    {
+        $type = strtolower(trim((string) ($this->request->getPost('type') ?? 'student')));
+        $identifier = trim((string) ($this->request->getPost('student_id') ?? $this->request->getPost('employee_id') ?? ''));
+        $password = (string) ($this->request->getPost('password') ?? '');
+
+        if ($identifier === '' || $password === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'student_id/employee_id and password are required.'
+            ])->setStatusCode(400);
+        }
+
+        if (!in_array($type, ['student', 'employee'], true)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'type must be student or employee.'
+            ])->setStatusCode(400);
+        }
+
+        $result = $type === 'employee'
+            ? $this->misApiService->employeeLogin($identifier, $password)
+            : $this->misApiService->studentLogin($identifier, $password);
+
+        return $this->response->setJSON([
+            'success' => (bool) ($result['success'] ?? false),
+            'message' => $result['message'] ?? ($result['success'] ? 'Login successful.' : 'Login failed.'),
+            'http_status' => $result['http_status'] ?? null,
+            'data' => $result['data'] ?? null,
+            'source' => 'mis'
+        ])->setStatusCode((int) ($result['http_status'] ?? 200));
+    }
+
+    /**
      * Get departments from MIS
      */
     public function getDepartments()
