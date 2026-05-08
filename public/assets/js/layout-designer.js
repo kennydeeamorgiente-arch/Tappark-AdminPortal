@@ -1452,34 +1452,31 @@ function createSectionButton(section) {
     const smallVehicleSVG = vehicleSVG.replace('width="100%" height="100%"', 'width="18" height="18"');
 
     // Use the correct display text from the logic above
-    const modeBadge = isCapacityOnly ?
-        '<span class="badge bg-warning" style="font-size: 9px; margin-left: 4px;">Capacity-only</span>' : '';
+    const modeBadge = isCapacityOnly ? '<span class="section-mode-badge">Capacity</span>' : '';
+    const compactDisplayText = isCapacityOnly ? `${section.capacity} capacity` : displayText;
 
     return `
         <button class="section-btn" data-section="${section.section_name}" data-rows="${rows}" data-cols="${cols}" onclick="selectSection('${section.section_name}', ${rows}, ${cols})">
-            <div class="section-preview">
+            <div class="section-preview" aria-hidden="true">
                 <div class="preview-grid" style="grid-template-columns: repeat(${cols}, 1fr);">
                     ${previewGrid}
                 </div>
             </div>
-            
-            <!-- Section Info -->
             <div class="section-info">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="font-weight: 700; color: #2c3e50; font-size: 1.1rem;">Section ${section.section_name}</div>
+                <div class="section-title-row">
+                    <span class="section-name">Section ${section.section_name}</span>
+                </div>
+                <div class="section-meta-row">
+                    <span class="section-vehicle-pill">
+                        <i class="${getVehicleIcon(section.vehicle_type)}"></i>
+                        <span>${section.vehicle_type}</span>
+                    </span>
                     ${modeBadge}
                 </div>
-                
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                    <div style="background: linear-gradient(135deg, #800000, #600000); color: white; padding: 6px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                        <i class="${getVehicleIcon(section.vehicle_type)}"></i>
-                        <span style="text-transform: capitalize;">${section.vehicle_type}</span>
-                    </div>
+                <div class="section-size-row">
+                    <span class="section-size">${compactDisplayText}</span>
                 </div>
-                
-                <div style="font-size: 0.9rem; color: #6c757d; font-weight: 500;">
-                    ${displayText}
-                </div>
+            </div>
         </button>
     `;
 }
@@ -2124,6 +2121,17 @@ function generateGrid() {
 
     // Update expand buttons
     updateExpandButtons();
+    updateLayoutGridTitle();
+}
+
+function updateLayoutGridTitle() {
+    const grid = document.getElementById('layout-grid');
+    const sizeText = document.getElementById('layoutGridSizeText');
+    if (!grid || !sizeText) return;
+
+    const rows = parseInt(grid.dataset.rows) || 8;
+    const cols = parseInt(grid.dataset.cols) || 8;
+    sizeText.textContent = `(${rows}×${cols})`;
 }
 
 // Expand grid in specified direction
@@ -2169,6 +2177,7 @@ function expandGrid(direction) {
 
     // Update expand buttons visibility
     updateExpandButtons();
+    updateLayoutGridTitle();
 }
 
 // Update expand buttons visibility and state
@@ -2404,6 +2413,7 @@ function selectSectionForEdit(cell, row, col) {
 
     if (editControls) {
         editControls.style.display = 'block';
+        editControls.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         console.log('Edit controls shown');
     } else {
         console.error('Edit controls element not found!');
@@ -2411,9 +2421,9 @@ function selectSectionForEdit(cell, row, col) {
 
     if (sectionInfo) {
         sectionInfo.innerHTML = `
-            <strong>Section:</strong> ${sectionData.type}<br>
-            <strong>Size:</strong> ${sectionData.rows}Ã—${sectionData.cols}<br>
-            <strong>Position:</strong> (${sectionData.startRow}, ${sectionData.startCol})
+            <span><strong>Section</strong> ${sectionData.type}</span>
+            <span><strong>Size</strong> ${sectionData.rows}x${sectionData.cols}</span>
+            <span><strong>Position</strong> (${sectionData.startRow}, ${sectionData.startCol})</span>
         `;
     }
 }
@@ -2442,29 +2452,22 @@ function updateSectionIndicators() {
     document.querySelectorAll('.section-btn').forEach(btn => {
         const sectionType = btn.dataset.section;
         if (placedTypes.includes(sectionType)) {
-            // Mark as placed (red indicator)
+            // Mark as placed
             btn.classList.add('placed');
-            btn.style.background = '#dc3545';
-            btn.style.color = 'white';
-            btn.style.opacity = '0.7';
-            btn.style.cursor = 'not-allowed';
 
             // Add placed indicator
             let indicator = btn.querySelector('.placed-indicator');
             if (!indicator) {
                 indicator = document.createElement('span');
                 indicator.className = 'placed-indicator';
-                indicator.innerHTML = ' âœ"';
-                indicator.style.fontWeight = 'bold';
+                indicator.setAttribute('aria-label', 'Placed');
+                indicator.title = 'Placed';
+                indicator.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i>';
                 btn.appendChild(indicator);
             }
         } else {
             // Mark as available
             btn.classList.remove('placed');
-            btn.style.background = '';
-            btn.style.color = '';
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
 
             // Remove placed indicator
             const indicator = btn.querySelector('.placed-indicator');
@@ -2609,8 +2612,8 @@ function placeSectionHorizontal() { // Updated to use SVG parking slots - Fixed 
                 targetCell.dataset.sectionRows = 1;
                 targetCell.dataset.sectionCols = gridWidth;
                 targetCell.style.backgroundColor = 'transparent';
-                targetCell.style.border = '2px solid #ced4da';
-                targetCell.style.boxShadow = '0 2px 4px rgba(206, 212, 218, 0.3)';
+                targetCell.style.border = 'none';
+                targetCell.style.boxShadow = 'none';
                 targetCell.style.transition = 'all 0.2s ease';
 
                 if (c === 0) {
@@ -2649,8 +2652,8 @@ function placeSectionHorizontal() { // Updated to use SVG parking slots - Fixed 
                     targetCell.dataset.sectionRows = rows;
                     targetCell.dataset.sectionCols = cols;
                     targetCell.style.backgroundColor = 'transparent';
-                    targetCell.style.border = '2px solid #45a049';
-                    targetCell.style.boxShadow = '0 2px 4px rgba(76, 175, 80, 0.3)';
+                    targetCell.style.border = 'none';
+                    targetCell.style.boxShadow = 'none';
                     targetCell.style.transition = 'all 0.2s ease';
 
                     // Slot number should be sequential: 1, 2, 3, 4, 5... for each section
@@ -2696,6 +2699,9 @@ function placeSectionHorizontal() { // Updated to use SVG parking slots - Fixed 
 
     // Update designer stats
     updateDesignerStats();
+
+    // Normalize final placed visuals so placement preview borders do not remain.
+    renderSection(selectedSectionForEdit, placedSections.get(selectedSectionForEdit));
 
 
     // Mark as having unsaved changes when placing section
@@ -2875,8 +2881,8 @@ function placeSectionVertical() { // Updated to use SVG parking slots - Fixed ba
                 targetCell.dataset.sectionRows = gridWidth;
                 targetCell.dataset.sectionCols = 1;
                 targetCell.style.backgroundColor = 'transparent';
-                targetCell.style.border = '2px solid #ced4da';
-                targetCell.style.boxShadow = '0 2px 4px rgba(206, 212, 218, 0.3)';
+                targetCell.style.border = 'none';
+                targetCell.style.boxShadow = 'none';
                 targetCell.style.transition = 'all 0.2s ease';
 
                 if (r === 0) {
@@ -2919,8 +2925,8 @@ function placeSectionVertical() { // Updated to use SVG parking slots - Fixed ba
                     targetCell.dataset.sectionRows = rows;
                     targetCell.dataset.sectionCols = cols;
                     targetCell.style.backgroundColor = 'transparent';
-                    targetCell.style.border = '2px solid #800000';
-                    targetCell.style.boxShadow = '0 2px 4px rgba(128, 0, 0, 0.3)';
+                    targetCell.style.border = 'none';
+                    targetCell.style.boxShadow = 'none';
                     targetCell.style.transition = 'all 0.2s ease';
 
                     // Slot number should be sequential: 1, 2, 3, 4, 5... for each section
@@ -2970,6 +2976,9 @@ function placeSectionVertical() { // Updated to use SVG parking slots - Fixed ba
 
     // Update designer stats
     updateDesignerStats();
+
+    // Normalize final placed visuals so placement preview borders do not remain.
+    renderSection(selectedSectionForEdit, placedSections.get(selectedSectionForEdit));
 
 
     console.log('=== SECTION DATA STORED ===');
@@ -3389,6 +3398,7 @@ function handleCellMouseUp(cell, row, col, event) {
     if (isDraggingSection && dragStartCell && dragStartCell.dataset.section) {
         const sectionId = dragStartCell.dataset.section;
         const sectionData = placedSections.get(sectionId);
+        let sectionMoved = false;
 
         if (sectionData && cell !== dragStartCell) {
             // Get actual grid size for bounds check
@@ -3425,6 +3435,7 @@ function handleCellMouseUp(cell, row, col, event) {
 
                     console.log('Before render - sectionData.orientation:', sectionData.orientation);
                     renderSection(sectionId, sectionData);
+                    sectionMoved = true;
 
                     // Update section info if editing
                     if (selectedSectionForEdit === sectionId) {
@@ -3451,6 +3462,9 @@ function handleCellMouseUp(cell, row, col, event) {
 
         // Clear drag targets and reset drag state
         clearDragTargets();
+        if (sectionMoved) {
+            cancelSectionEdit();
+        }
         isDraggingSection = false;
         dragStartCell = null;
     } else if (isDraggingElement && dragStartCell && draggedElementPos) {
@@ -4017,6 +4031,7 @@ async function loadExistingLayout() {
             selectedSection = null;
             selectedSectionData = null;
             updateSectionIndicators();
+            updateLayoutGridTitle();
             clearAllSelections();
 
             // Restore sections
@@ -4337,6 +4352,7 @@ function showDesignerModal({
         confirmBtn.textContent = confirmText;
         confirmBtn.className = `btn btn-${variant} designer-modal-confirm`;
         cancelBtn.textContent = cancelText;
+        cancelBtn.className = 'btn btn-outline-secondary designer-modal-cancel';
         cancelBtn.classList.toggle('d-none', !showCancel);
 
         // Ensure backdrop is visible and properly styled for nested modals
