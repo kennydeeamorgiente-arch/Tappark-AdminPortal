@@ -1211,6 +1211,27 @@ if (typeof bootstrap === 'undefined') {
             // Load the page
             loadPage(route, title);
         });
+
+        // Sidebar brand/logo click - go back to dashboard
+        $(document).on('click', '.sidebar-brand', function(e) {
+            e.preventDefault();
+
+            $('.menu-link, .submenu-link').removeClass('active');
+            $('.menu-link[data-route="dashboard"]').addClass('active');
+
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile && $('#sidebar').hasClass('show')) {
+                $('#sidebar').removeClass('show');
+                $('#sidebarOverlay').removeClass('show');
+                $('body').css('overflow', '');
+            }
+
+            if (typeof loadPage === 'function') {
+                loadPage('dashboard', 'Dashboard');
+            } else {
+                window.location.href = BASE_URL + 'dashboard';
+            }
+        });
         
         // ====================================
         // PAGE TITLE CLICK TO SCROLL TO TOP

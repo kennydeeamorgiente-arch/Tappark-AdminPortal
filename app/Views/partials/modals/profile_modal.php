@@ -125,10 +125,12 @@
                                         <i class="fas fa-camera me-1"></i> Change Picture
                                     </button>
                                 </div>
+                                <!--
                                 <div class="alert alert-info py-2 mb-3">
                                     <i class="fas fa-lock me-2"></i>
                                     <small class="mb-0">Name, email, and user type are managed by the system and cannot be edited here.</small>
                                 </div>
+-->
                                 <?= form_open('profile/update', ['id' => 'profileForm', 'enctype' => 'multipart/form-data']) ?>
                                     <div id="profileFormSection">
                                     <div class="row mb-2">
@@ -213,6 +215,7 @@
                         </div>
 
                         <!-- Database Settings -->
+                        <!--
                         <div class="mb-4">
                             <h6 class="mb-3 fw-semibold d-flex align-items-center">
                                 <i class="fas fa-database me-2" style="color: var(--tappark-maroon);"></i>Database Configuration
@@ -260,6 +263,7 @@
                                 </div>
                             <?= form_close() ?>
                         </div>
+-->
 
                         <!-- Application Settings -->
                         <div class="mb-4">
@@ -424,7 +428,7 @@
                             </div>
                         </div>
 
-                        <!-- System Maintenance -->
+                        <!-- System Maintenance 
                         <div class="mb-0">
                             <h6 class="mb-3 fw-semibold d-flex align-items-center">
                                 <i class="fas fa-tools me-2" style="color: var(--tappark-maroon);"></i>System Maintenance
@@ -448,6 +452,7 @@
                                 <small class="mb-0">System maintenance features are currently under development.</small>
                             </div>
                         </div>
+                        -->
                     </div>
                 </div>
             </div>

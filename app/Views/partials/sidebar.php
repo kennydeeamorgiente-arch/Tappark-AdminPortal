@@ -5,10 +5,12 @@
 <aside class="sidebar" id="sidebar">
     <!-- Sidebar Header -->
     <div class="sidebar-header">
-        <img id="sidebarLogo" src="<?= base_url('assets/images/LOGOTAPPARK.png') ?>" alt="TapPark Logo" class="sidebar-logo" 
-             onerror="this.style.display='none'">
-        <h2 class="sidebar-title">TapPark</h2>
-        <p class="sidebar-subtitle">Admin Dashboard</p>
+        <a href="#" class="sidebar-brand" data-route="dashboard" data-title="Dashboard" aria-label="Go to dashboard">
+            <img id="sidebarLogo" src="<?= base_url('assets/images/LOGOTAPPARK.png') ?>" alt="TapPark Logo" class="sidebar-logo" 
+                 onerror="this.style.display='none'">
+            <h2 class="sidebar-title">TapPark</h2>
+            <p class="sidebar-subtitle">Admin Dashboard</p>
+        </a>
     </div>
     
     <!-- Sidebar Menu -->
