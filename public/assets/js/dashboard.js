@@ -528,7 +528,8 @@ function initDashboardCharts() {
                             chartColors.borderColor
                         ],
                         borderWidth: 2,
-                        hoverOffset: 6
+                        hoverBorderWidth: 2,
+                        hoverOffset: 2
                     }]
                 },
                 options: {
@@ -536,6 +537,14 @@ function initDashboardCharts() {
                     maintainAspectRatio: false,
                     animation: window.dashboardAnimations.doughnutModern,
                     cutout: '64%',
+                    layout: {
+                        padding: {
+                            top: 8,
+                            right: 8,
+                            bottom: 2,
+                            left: 8
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'bottom',
@@ -543,9 +552,14 @@ function initDashboardCharts() {
                                 boxWidth: 15,
                                 usePointStyle: true,
                                 pointStyle: 'circle',
-                                padding: 16,
+                                padding: 14,
                                 font: { size: 12 }
                             }
+                        },
+                        tooltip: {
+                            displayColors: true,
+                            padding: 10,
+                            caretPadding: 8
                         }
                     }
                 }
