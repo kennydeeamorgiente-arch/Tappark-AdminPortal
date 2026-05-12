@@ -524,17 +524,19 @@ if (typeof window.initPageScripts === 'function') {
             // ====================================
             // LOAD USERS TABLE
             // ====================================
-            function loadUsers() {
+            function loadUsers(options) {
+                options = options || {};
                 const params = new URLSearchParams({
                     page: currentPage,
                     per_page: perPage,
                     ...currentFilters
                 });
 
-                $.ajax({
+                return $.ajax({
                     url: `${baseUrl}users/list?${params}`,
                     method: 'GET',
                     beforeSend: function () {
+                        if (options.silent) return;
                         $('#userTableBody').html(`
                         <tr>
                             <td colspan="7" class="text-center py-5">
@@ -568,8 +570,10 @@ if (typeof window.initPageScripts === 'function') {
                 });
             }
 
-            // Make loadUsers available globally for refresh
-            window.refreshCurrentPage = loadUsers;
+            // Default refresh hook until the tab-aware hook is registered below.
+            window.refreshCurrentPage = function(options) {
+                return loadUsers(options);
+            };
 
             // ====================================
             // RENDER USERS TABLE
@@ -3159,17 +3163,19 @@ if (typeof window.initPageScripts === 'function') {
             }
 
             // Load walk-in guests
-            function loadWalkInGuests() {
+            function loadWalkInGuests(options) {
+                options = options || {};
                 const params = new URLSearchParams({
                     page: guestCurrentPage,
                     per_page: guestPerPage,
                     ...guestFilters
                 });
 
-                $.ajax({
+                return $.ajax({
                     url: `${baseUrl}users/getWalkInGuests?${params}`,
                     method: 'GET',
                     beforeSend: function () {
+                        if (options.silent) return;
                         $('#guestsTableBody').html(`
                         <tr>
                             <td colspan="7" class="text-center py-5">
@@ -3454,7 +3460,8 @@ if (typeof window.initPageScripts === 'function') {
             let allAdminsData = [];
 
             // Load admins list
-            function loadAdmins() {
+            function loadAdmins(options) {
+                options = options || {};
                 // Ensure user_type_id is set to 3 for Admins
                 adminsFilters.user_type_id = 3;
 
@@ -3464,10 +3471,11 @@ if (typeof window.initPageScripts === 'function') {
                     ...adminsFilters
                 });
 
-                $.ajax({
+                return $.ajax({
                     url: `${baseUrl}users/list?${params}`,
                     method: 'GET',
                     beforeSend: function () {
+                        if (options.silent) return;
                         $('#adminsTableBody').html(`
                             <tr>
                                 <td colspan="7" class="text-center py-5">
@@ -3639,7 +3647,8 @@ if (typeof window.initPageScripts === 'function') {
             let allAttendantsData = [];
 
             // Load attendants list
-            function loadAttendants() {
+            function loadAttendants(options) {
+                options = options || {};
                 // Ensure user_type_id is set to 2 for Attendants (assuming 2 is attendant)
                 // If Attendant ID is different, update here. Based on logic usually Admin=3, User=1.
                 // Checking previous code: "userData.user_type_id == 2" was used for Attendant.
@@ -3651,10 +3660,11 @@ if (typeof window.initPageScripts === 'function') {
                     ...attendantsFilters
                 });
 
-                $.ajax({
+                return $.ajax({
                     url: `${baseUrl}users/list?${params}`,
                     method: 'GET',
                     beforeSend: function () {
+                        if (options.silent) return;
                         $('#attendantsTableBody').html(`
                             <tr>
                                 <td colspan="7" class="text-center py-5">
@@ -4014,6 +4024,20 @@ if (typeof window.initPageScripts === 'function') {
                 // Open delete confirmation modal
                 openDeleteModal(userId, userName, 'users');
             });
+
+            window.refreshCurrentPage = function(options) {
+                const activeTab = $('.nav-link.active').attr('data-bs-target');
+                if (activeTab === '#admins') {
+                    return loadAdmins(options);
+                }
+                if (activeTab === '#attendants') {
+                    return loadAttendants(options);
+                }
+                if (activeTab === '#walk-in-guests') {
+                    return loadWalkInGuests(options);
+                }
+                return loadUsers(options);
+            };
 
             // If we reach here, we're on the users page and have initialized it
             // Return early to prevent other page scripts from running

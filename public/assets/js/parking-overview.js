@@ -117,8 +117,9 @@ if (typeof window.initPageScripts === 'function') {
             });
 
             // Load parking overview data
-            function loadParkingOverview() {
-                $.ajax({
+            function loadParkingOverview(options) {
+                options = options || {};
+                return $.ajax({
                     url: `${baseUrl}api/parking/overview`,
                     method: 'GET',
                     success: function (response) {
@@ -136,6 +137,10 @@ if (typeof window.initPageScripts === 'function') {
                     }
                 });
             }
+
+            window.refreshCurrentPage = function(options) {
+                return loadParkingOverview(options);
+            };
 
             // Update statistics
             function updateStats(areas) {

@@ -2184,7 +2184,8 @@ function initializeCharts() {
 
 // Global function to load reports with filter (AJAX)
 // Make sure this is available globally
-window.loadReportsWithFilter = function (filter, startDate = null, endDate = null) {
+window.loadReportsWithFilter = function (filter, startDate = null, endDate = null, options = {}) {
+    window.reportsAutoRefreshState = { filter, startDate, endDate };
     // Ensure BASE_URL is defined (should be set in scripts.php)
     const baseUrl = (typeof BASE_URL !== 'undefined') ? BASE_URL : (typeof window.BASE_URL !== 'undefined' ? window.BASE_URL : '/');
     let url = baseUrl + 'reports?filter=' + filter + '&filter_change=1';
@@ -2196,21 +2197,22 @@ window.loadReportsWithFilter = function (filter, startDate = null, endDate = nul
         console.log('🔄 Loading reports with filter:', filter);
     }
 
-    // Show loading animation in reports content area only
-    $('#reportsContent').html(`
-        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading...</span>
+    if (!options.silent) {
+        $('#reportsContent').html(`
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="mb-2">Loading Reports...</h5>
+                    <p class="text-muted">Please wait while we update your data</p>
                 </div>
-                <h5 class="mb-2">Loading Reports...</h5>
-                <p class="text-muted">Please wait while we update your data</p>
             </div>
-        </div>
-    `);
+        `);
+    }
 
     // Load new data via AJAX
-    $.ajax({
+    return $.ajax({
         url: url,
         type: 'GET',
         timeout: 10000,
@@ -2259,6 +2261,12 @@ window.loadReportsWithFilter = function (filter, startDate = null, endDate = nul
             `);
         }
     });
+};
+
+window.refreshCurrentPage = function(options) {
+    if (!$('#reportsContent').length) return;
+    const state = window.reportsAutoRefreshState || { filter: 'today', startDate: null, endDate: null };
+    return window.loadReportsWithFilter(state.filter || 'today', state.startDate || null, state.endDate || null, options || {});
 };
 
 // Log that the function is defined (for debugging)

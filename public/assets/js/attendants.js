@@ -183,17 +183,19 @@ if (typeof window.initPageScripts === 'function') {
             // ====================================
             // LOAD ATTENDANTS TABLE
             // ====================================
-            function loadAttendants() {
+            function loadAttendants(options) {
+                options = options || {};
                 const params = new URLSearchParams({
                     page: currentPage,
                     per_page: perPage,
                     ...currentFilters
                 });
 
-                $.ajax({
+                return $.ajax({
                     url: `${baseUrl}attendants/list?${params}`,
                     method: 'GET',
                     beforeSend: function () {
+                        if (options.silent) return;
                         $('#attendantTableBody').html(`
                         <tr>
                             <td colspan="8" class="text-center py-5">
@@ -212,12 +214,14 @@ if (typeof window.initPageScripts === 'function') {
                             if (response.stats) {
                                 updateStats(response.stats);
                             }
-                            // Clear filters
-                            currentFilters = {};
-                            $('#sharedSearchInput').val('');
-                            $('#sharedFilterUserType').val('');
-                            $('#sharedFilterStatus').val('');
-                            $('#sharedFilterOnline').val('');
+                            if (!options.silent) {
+                                // Preserve active filters during background auto-refresh.
+                                currentFilters = {};
+                                $('#sharedSearchInput').val('');
+                                $('#sharedFilterUserType').val('');
+                                $('#sharedFilterStatus').val('');
+                                $('#sharedFilterOnline').val('');
+                            }
                         }
                     },
                     error: function () {
@@ -232,6 +236,10 @@ if (typeof window.initPageScripts === 'function') {
                     }
                 });
             }
+
+            window.refreshCurrentPage = function(options) {
+                return loadAttendants(options);
+            };
 
             // ====================================
             // RENDER ATTENDANTS TABLE

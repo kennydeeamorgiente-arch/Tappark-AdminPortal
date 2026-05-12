@@ -54,17 +54,19 @@
     // ====================================
     // LOAD PLANS
     // ====================================
-    function loadPlans() {
+    function loadPlans(options) {
+        options = options || {};
         const params = new URLSearchParams({
             page: currentPage,
             per_page: perPage,
             ...currentFilters
         });
 
-        $.ajax({
+        return $.ajax({
             url: `${baseUrl}subscriptions/list?${params}`,
             method: 'GET',
             beforeSend: function () {
+                if (options.silent) return;
                 $('#planTableBody').html(`
                     <tr>
                         <td colspan="7" class="text-center py-5">
@@ -81,12 +83,14 @@
                     renderPlansTable(response.data);
                     renderPagination(response.pagination);
                     updateStats(response.stats);
-                    // Clear filters
-                    currentFilters = {};
-                    $('#sharedSearchInput').val('');
-                    $('#sharedFilterPriceRange').val('');
-                    $('#sharedFilterHoursRange').val('');
-                    $('#sharedFilterPlanStatus').val('');
+                    if (!options.silent) {
+                        // Preserve active filters during background auto-refresh.
+                        currentFilters = {};
+                        $('#sharedSearchInput').val('');
+                        $('#sharedFilterPriceRange').val('');
+                        $('#sharedFilterHoursRange').val('');
+                        $('#sharedFilterPlanStatus').val('');
+                    }
                 }
             },
             error: function () {
@@ -101,6 +105,10 @@
             }
         });
     }
+
+    window.refreshCurrentPage = function(options) {
+        return loadPlans(options);
+    };
 
     // ====================================
     // RENDER PLANS TABLE

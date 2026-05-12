@@ -262,15 +262,17 @@
         });
     }
 
-    function updateList(partialParams) {
+    function updateList(partialParams, options) {
+        options = options || {};
         const params = Object.assign({}, getCurrentParams(), partialParams || {});
         params.list_only = '1';
         const url = getBaseUrl() + 'feedback?' + buildQuery(params) + '&list_only=1';
 
-        // Show Spinner
-        $('#feedbackLoadingOverlay').removeClass('d-none').addClass('d-flex');
+        if (!options.silent) {
+            $('#feedbackLoadingOverlay').removeClass('d-none').addClass('d-flex');
+        }
 
-        $.ajax({
+        return $.ajax({
             url: url,
             method: 'GET',
             success: function(html) {
@@ -572,5 +574,12 @@
 
     // Initial Load
     fetchStats();
+    window.refreshCurrentPage = function(options) {
+        options = options || {};
+        fetchStats();
+        return updateList({
+            page: $('#feedbackCurrentPage').val() || '1'
+        }, options);
+    };
 })();
 </script>
