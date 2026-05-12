@@ -1187,3 +1187,173 @@
         margin: 0 0.5rem;
     }
 }
+
+/* Areas page polish: keep filters and area actions consistent with the softened dark theme. */
+#areasFiltersCard .compact-filter-row,
+#areaSectionsModal .input-group {
+    align-items: stretch;
+}
+
+#areasFiltersCard .input-group,
+#areaSectionsModal .input-group {
+    border-radius: 8px;
+}
+
+#areasFiltersCard .input-group-text,
+#areaSectionsModal .input-group-text {
+    width: 42px;
+    justify-content: center;
+    border-radius: 8px 0 0 8px !important;
+}
+
+#areasFiltersCard .input-group .form-control,
+#areaSectionsModal .input-group .form-control {
+    border-radius: 0 8px 8px 0 !important;
+}
+
+#areasGrid .area-card .btn-outline-primary.flex-fill {
+    background: transparent !important;
+    border: 1px solid rgba(128, 0, 0, 0.5) !important;
+    color: #8b1f2b !important;
+    font-weight: 600;
+    border-radius: 7px;
+    box-shadow: none !important;
+}
+
+#areasGrid .area-card .btn-outline-primary.flex-fill:hover,
+#areasGrid .area-card .btn-outline-primary.flex-fill:focus {
+    background: rgba(128, 0, 0, 0.06) !important;
+    border-color: rgba(128, 0, 0, 0.72) !important;
+    color: #6f1822 !important;
+}
+
+[data-bs-theme="dark"] #areasFiltersCard .card-body {
+    background: #2b2125 !important;
+}
+
+[data-bs-theme="dark"] #areasFiltersCard .compact-filter-field .form-label,
+[data-bs-theme="dark"] #areaSectionsModal .form-label {
+    color: #c9adb3 !important;
+}
+
+[data-bs-theme="dark"] #areasFiltersCard .input-group,
+[data-bs-theme="dark"] #areaSectionsModal .input-group {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+[data-bs-theme="dark"] #areasFiltersCard .input-group-text,
+[data-bs-theme="dark"] #areaSectionsModal .input-group-text {
+    background: #281f23 !important;
+    border-color: rgba(217, 151, 160, 0.28) !important;
+    color: #c9adb3 !important;
+}
+
+[data-bs-theme="dark"] #areasFiltersCard .form-control,
+[data-bs-theme="dark"] #areasFiltersCard .tappark-select-toggle,
+[data-bs-theme="dark"] #areaSectionsModal .form-control,
+[data-bs-theme="dark"] #areaSectionsModal .form-select,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-toggle {
+    background: #2f2428 !important;
+    border-color: rgba(217, 151, 160, 0.28) !important;
+    color: #f4e1e4 !important;
+}
+
+[data-bs-theme="dark"] #areasFiltersCard .form-control:focus,
+[data-bs-theme="dark"] #areasFiltersCard .tappark-select.open .tappark-select-toggle,
+[data-bs-theme="dark"] #areaSectionsModal .form-control:focus,
+[data-bs-theme="dark"] #areaSectionsModal .form-select:focus,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select.open .tappark-select-toggle {
+    background: #37292e !important;
+    border-color: rgba(231, 172, 180, 0.42) !important;
+    box-shadow: 0 0 0 0.18rem rgba(184, 93, 103, 0.16) !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-toggle i {
+    color: #c9adb3 !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-menu {
+    background: linear-gradient(180deg, #382a30 0%, #2f2428 100%) !important;
+    border-color: rgba(231, 172, 180, 0.36) !important;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.38) !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option {
+    color: #f4e1e4 !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option:hover,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option:focus {
+    background: rgba(231, 172, 180, 0.12) !important;
+    color: #ffe9ec !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option.active,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option.active:hover,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option.active:focus {
+    background: #7e343a !important;
+    color: #fff3f5 !important;
+}
+
+[data-bs-theme="dark"] #areasGrid .area-card .btn-outline-primary.flex-fill {
+    background: #7e343a !important;
+    border: 1px solid rgba(231, 172, 180, 0.34) !important;
+    color: #fff3f5 !important;
+}
+
+[data-bs-theme="dark"] #areasGrid .area-card .btn-outline-primary.flex-fill:hover,
+[data-bs-theme="dark"] #areasGrid .area-card .btn-outline-primary.flex-fill:focus {
+    background: #8c3d44 !important;
+    border-color: rgba(244, 196, 202, 0.48) !important;
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .badge {
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .badge.bg-light,
+[data-bs-theme="dark"] #areaSectionsModal .badge.bg-light.text-dark {
+    background: rgba(110, 95, 101, 0.72) !important;
+    border-color: rgba(214, 188, 193, 0.22) !important;
+    color: #ead7db !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .badge.bg-info {
+    background: rgba(67, 117, 138, 0.74) !important;
+    border-color: rgba(145, 204, 224, 0.28) !important;
+    color: #d7f2fb !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .badge.bg-secondary {
+    background: rgba(110, 95, 101, 0.72) !important;
+    border-color: rgba(214, 188, 193, 0.22) !important;
+    color: #ead7db !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .badge.bg-warning {
+    background: rgba(154, 116, 38, 0.76) !important;
+    border-color: rgba(238, 195, 91, 0.3) !important;
+    color: #ffe7ad !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .badge.bg-danger {
+    background: rgba(145, 59, 66, 0.72) !important;
+    border-color: rgba(239, 157, 166, 0.28) !important;
+    color: #ffd8dc !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .area-section-actions .btn.btn-maroon,
+[data-bs-theme="dark"] #areaSectionsModal .area-section-actions .btn.btn-danger {
+    background: #7e343a !important;
+    border-color: rgba(231, 172, 180, 0.3) !important;
+    color: #fff3f5 !important;
+    box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .area-section-actions .btn.btn-maroon:hover,
+[data-bs-theme="dark"] #areaSectionsModal .area-section-actions .btn.btn-danger:hover {
+    background: #8c3d44 !important;
+    border-color: rgba(244, 196, 202, 0.46) !important;
+}

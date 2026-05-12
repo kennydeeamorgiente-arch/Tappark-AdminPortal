@@ -150,6 +150,20 @@
     background: transparent;
 }
 
+.occupancy-chart-shell {
+    position: relative;
+    width: min(100%, 280px);
+    height: 300px;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+.occupancy-chart-shell canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .guest-summary-card {
     min-height: 360px;
     border: 1px solid rgba(128, 0, 0, 0.14);

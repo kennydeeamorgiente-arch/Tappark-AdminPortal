@@ -156,7 +156,7 @@
                 </h6>
             </div>
             <div class="card-body d-flex align-items-center justify-content-center">
-                <div style="max-width: 250px; max-height: 250px;">
+                <div class="occupancy-chart-shell">
                     <canvas id="occupancyChart"></canvas>
                 </div>
             </div>

@@ -3432,3 +3432,100 @@ html[data-bs-theme="dark"] body .modal i[style*="color: #800000"],
 html[data-bs-theme="dark"] body .modal i[style*="color:#800000"] {
     color: var(--icon-primary) !important;
 }
+
+/* Final dark-mode normalization for generated badges and compact table actions. */
+html[data-bs-theme="dark"] {
+    --tappark-dark-primary: #7e343a;
+    --tappark-dark-primary-hover: #8c3d44;
+    --tappark-dark-primary-border: rgba(231, 172, 180, 0.34);
+    --tappark-dark-primary-text: #fff3f5;
+}
+
+html[data-bs-theme="dark"] body .badge {
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-bs-theme="dark"] body .badge.bg-primary,
+html[data-bs-theme="dark"] body .badge.bg-maroon {
+    background: rgba(126, 52, 58, 0.7) !important;
+    border-color: rgba(231, 172, 180, 0.24) !important;
+    color: #ffe7ea !important;
+}
+
+html[data-bs-theme="dark"] body .badge.bg-success,
+html[data-bs-theme="dark"] body .badge.bg-active {
+    background: rgba(63, 118, 82, 0.72) !important;
+    border-color: rgba(142, 204, 161, 0.28) !important;
+    color: #d7f5dc !important;
+}
+
+html[data-bs-theme="dark"] body .badge.bg-danger {
+    background: rgba(145, 59, 66, 0.72) !important;
+    border-color: rgba(239, 157, 166, 0.28) !important;
+    color: #ffd8dc !important;
+}
+
+html[data-bs-theme="dark"] body .badge.bg-warning,
+html[data-bs-theme="dark"] body .badge.text-bg-warning {
+    background: rgba(154, 116, 38, 0.76) !important;
+    border-color: rgba(238, 195, 91, 0.3) !important;
+    color: #ffe7ad !important;
+}
+
+html[data-bs-theme="dark"] body .badge.bg-info {
+    background: rgba(67, 117, 138, 0.74) !important;
+    border-color: rgba(145, 204, 224, 0.28) !important;
+    color: #d7f2fb !important;
+}
+
+html[data-bs-theme="dark"] body .badge.bg-secondary,
+html[data-bs-theme="dark"] body .badge.bg-inactive,
+html[data-bs-theme="dark"] body .badge.bg-gray,
+html[data-bs-theme="dark"] body .badge.bg-light,
+html[data-bs-theme="dark"] body .badge.bg-white {
+    background: rgba(110, 95, 101, 0.72) !important;
+    border-color: rgba(214, 188, 193, 0.22) !important;
+    color: #ead7db !important;
+}
+
+html[data-bs-theme="dark"] body .btn.btn-primary,
+html[data-bs-theme="dark"] body .btn.btn-maroon,
+html[data-bs-theme="dark"] body .btn.btn-danger,
+html[data-bs-theme="dark"] body .btn.btn-outline-primary:hover,
+html[data-bs-theme="dark"] body .btn.btn-outline-maroon:hover {
+    background: var(--tappark-dark-primary) !important;
+    border-color: var(--tappark-dark-primary-border) !important;
+    color: var(--tappark-dark-primary-text) !important;
+    box-shadow: none !important;
+}
+
+html[data-bs-theme="dark"] body .btn.btn-primary:hover,
+html[data-bs-theme="dark"] body .btn.btn-maroon:hover,
+html[data-bs-theme="dark"] body .btn.btn-danger:hover {
+    background: var(--tappark-dark-primary-hover) !important;
+    border-color: rgba(244, 196, 202, 0.48) !important;
+}
+
+html[data-bs-theme="dark"] body .btn.btn-outline-primary,
+html[data-bs-theme="dark"] body .btn.btn-outline-maroon,
+html[data-bs-theme="dark"] body .table .btn.btn-outline-primary,
+html[data-bs-theme="dark"] body .table .btn.btn-outline-maroon {
+    background: transparent !important;
+    border-color: var(--tappark-dark-primary-border) !important;
+    color: #ffdce1 !important;
+    box-shadow: none !important;
+}
+
+html[data-bs-theme="dark"] body .btn.btn-outline-primary:hover,
+html[data-bs-theme="dark"] body .btn.btn-outline-primary:focus,
+html[data-bs-theme="dark"] body .btn.btn-outline-maroon:hover,
+html[data-bs-theme="dark"] body .btn.btn-outline-maroon:focus,
+html[data-bs-theme="dark"] body .table .btn.btn-outline-primary:hover,
+html[data-bs-theme="dark"] body .table .btn.btn-outline-primary:focus,
+html[data-bs-theme="dark"] body .table .btn.btn-outline-maroon:hover,
+html[data-bs-theme="dark"] body .table .btn.btn-outline-maroon:focus {
+    background: var(--tappark-dark-primary) !important;
+    border-color: var(--tappark-dark-primary-border) !important;
+    color: var(--tappark-dark-primary-text) !important;
+}

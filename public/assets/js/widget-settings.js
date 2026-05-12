@@ -170,6 +170,42 @@
         return card?.closest('[class*="col-"]') || card;
     }
 
+    function removeColumnClasses(element) {
+        if (!element) return;
+        Array.from(element.classList).forEach(cls => {
+            if (/^col($|-)/.test(cls)) {
+                element.classList.remove(cls);
+            }
+        });
+    }
+
+    function resetRowFill(page) {
+        const root = document.getElementById(page === 'dashboard' ? 'dashboardContent' : 'reportsContent');
+        if (!root) return;
+        root.querySelectorAll('[data-widget-id]').forEach(element => {
+            element.style.flexGrow = '';
+            element.style.maxWidth = '';
+        });
+    }
+
+    function fillVisibleWidgetRows(page) {
+        const root = document.getElementById(page === 'dashboard' ? 'dashboardContent' : 'reportsContent');
+        if (!root) return;
+
+        root.querySelectorAll('.row').forEach(row => {
+            const visibleWidgets = Array.from(row.children).filter(child => {
+                return child.dataset?.widgetId && !child.classList.contains('d-none');
+            });
+
+            if (!visibleWidgets.length) return;
+
+            visibleWidgets.forEach(child => {
+                child.style.flexGrow = '1';
+                child.style.maxWidth = '100%';
+            });
+        });
+    }
+
     function collectDashboardWidgets() {
         const root = document.getElementById('dashboardContent');
         if (!root) return [];
@@ -305,7 +341,7 @@
         target.classList.toggle('d-none', setting.visible === false);
         target.classList.toggle('widget-export-hidden', setting.exportVisible === false || setting.visible === false);
 
-        Object.values(SIZE_CLASS).forEach(classes => classes.split(' ').forEach(cls => target.classList.remove(cls)));
+        removeColumnClasses(target);
         (SIZE_CLASS[setting.size] || SIZE_CLASS.medium).split(' ').forEach(cls => target.classList.add(cls));
 
         const titleEl = widget.card.querySelector('h4,h5,h6');
@@ -347,7 +383,9 @@
         const widgets = collectWidgets(page);
         const settings = ensureDefaults(page, widgets);
         const ordered = widgets.slice().sort((a, b) => (settings[a.id]?.order || 0) - (settings[b.id]?.order || 0));
+        resetRowFill(page);
         ordered.forEach(widget => applySettingsToWidget(widget, settings[widget.id]));
+        fillVisibleWidgetRows(page);
         writeSettings(page, settings);
     }
 
