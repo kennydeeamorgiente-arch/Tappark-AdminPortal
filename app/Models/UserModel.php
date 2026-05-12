@@ -10,6 +10,7 @@ class UserModel extends Model
     public const ROLE_SUBSCRIBER = 1;
     public const ROLE_ATTENDANT = 2; // Attendant / Staff
     public const ROLE_ADMIN = 3;      // Administrator
+    public const ROLE_GUEST = 4;      // Guest / walk-in visitor
 
     protected $table = 'users';
     protected $primaryKey = 'user_id';

@@ -135,7 +135,7 @@
                             <th class="sortable" data-column="plan_id">ID <i class="fas fa-sort text-muted ms-1"></i></th>
                             <th class="sortable" data-column="plan_name">Plan Name <i class="fas fa-sort text-muted ms-1"></i></th>
                             <th class="sortable" data-column="cost">Cost (₱) <i class="fas fa-sort text-muted ms-1"></i></th>
-                            <th class="sortable" data-column="hours">Hours <i class="fas fa-sort text-muted ms-1"></i></th>
+                            <th class="sortable" data-column="tokens">Tokens <i class="fas fa-sort text-muted ms-1"></i></th>
                             <th class="sortable" data-column="subscribers">Subscribers <i class="fas fa-sort text-muted ms-1"></i></th>
                             <th>Description</th>
                             <th>Actions</th>

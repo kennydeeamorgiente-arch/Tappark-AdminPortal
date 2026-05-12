@@ -1703,6 +1703,10 @@ if (typeof window.initPageScripts === 'function') {
                     formData.status = status;
 
                 } else if (entity === 'attendants') {
+                    const selectedTypeId = String($('#hiddenUserTypeId').val() || $('#attendantUserTypeId').val() || '').trim();
+                    const isGuestType = selectedTypeId === '4';
+                    const identifierValue = $('#attendantEmployeeSearch').val().trim();
+
                     formData = {
                         first_name: $('#attendantFirstName').val().trim(),
                         last_name: $('#attendantLastName').val().trim(),
@@ -1711,6 +1715,11 @@ if (typeof window.initPageScripts === 'function') {
                         user_type_id: $('#attendantUserTypeId').is(':visible') ? $('#attendantUserTypeId').val() : $('#hiddenUserTypeId').val(),
                         assigned_area_id: $('#attendantAssignedArea').val()
                     };
+
+                    if (isGuestType) {
+                        formData.external_user_id = identifierValue;
+                        formData.plate_number = identifierValue;
+                    }
 
                     console.log('Form data being sent to backend:', formData);
 
@@ -1751,9 +1760,18 @@ if (typeof window.initPageScripts === 'function') {
 
                 if (entity === 'users') {
                     // Subscribers are now entered manually, so just require the typed values.
-                } else if (!formData.user_type_id) {
-                    errors.user_type_id = 'Role/Type is required';
-                    hasErrors = true;
+                } else {
+                    const isGuestType = String(formData.user_type_id || '') === '4';
+
+                    if (!formData.user_type_id) {
+                        errors.user_type_id = 'Role/Type is required';
+                        hasErrors = true;
+                    }
+
+                    if (isGuestType && !formData.plate_number) {
+                        errors.plate_number = 'Plate number is required';
+                        hasErrors = true;
+                    }
                 }
 
                 // Check for duplicate records
@@ -1795,8 +1813,8 @@ if (typeof window.initPageScripts === 'function') {
                 window.pendingCrudAction = action;
 
                 // Build confirmation summary
-                const roleName = $('.static-role-text').length && $('.static-role-text').is(':visible')
-                    ? $('.static-role-text').val()
+                const roleName = $('#attendantUserTypeStaticDisplay').is(':visible')
+                    ? $('#attendantUserTypeStaticDisplay').val()
                     : (entity === 'users'
                         ? 'Subscriber'
                         : ($('#attendantUserTypeId option:selected').text() || 'N/A'));
@@ -1829,12 +1847,22 @@ if (typeof window.initPageScripts === 'function') {
                         <div class="col-md-6">${formData.tokens || 0} tokens</div>
                     </div>`;
                     }
-                } else if (entity === 'attendants' && formData.assigned_area_id) {
+                } else if (entity === 'attendants') {
+                    const isGuestType = String(formData.user_type_id || '') === '4';
+
+                    if (isGuestType) {
+                        summaryHtml += `
+                    <div class="row">
+                        <div class="col-md-6"><strong>Plate Number:</strong></div>
+                        <div class="col-md-6">${escapeHtml(formData.plate_number || '')}</div>
+                    </div>`;
+                    } else if (formData.assigned_area_id) {
                     summaryHtml += `
                     <div class="row">
                         <div class="col-md-6"><strong>Assigned Area:</strong></div>
                         <div class="col-md-6">${$('#attendantAssignedArea option:selected').text() || 'N/A'}</div>
                     </div>`;
+                    }
                 }
 
                 summaryHtml += `
@@ -1846,18 +1874,24 @@ if (typeof window.initPageScripts === 'function') {
                 `;
 
                 // Change to confirmation view
+                const isGuestType = entity === 'attendants' && String(formData.user_type_id || '') === '4';
+                const confirmLabel = isGuestType ? 'Guest' : 'User';
                 const message = action === 'add'
-                    ? 'Are you sure you want to add this user?'
+                    ? (isGuestType
+                        ? 'Are you sure you want to add this guest?'
+                        : 'Are you sure you want to add this user?')
                     : 'Are you sure you want to update this user?';
                 const description = action === 'add'
-                    ? `You are about to add "${formData.first_name} ${formData.last_name}" to the system.`
+                    ? (isGuestType
+                        ? `You are about to add guest "${formData.first_name} ${formData.last_name}" to the system.`
+                        : `You are about to add "${formData.first_name} ${formData.last_name}" to the system.`)
                     : `You are about to update user "${formData.first_name} ${formData.last_name}".`;
 
-                $('#crudConfirmTitle').text('Confirm ' + (action === 'add' ? 'Add User' : 'Update User'));
+                $('#crudConfirmTitle').text(`Confirm ${action === 'add' ? 'Add' : 'Update'} ${confirmLabel}`);
                 $('#crudConfirmMessage').text(message);
                 $('#crudConfirmDescription').text(description);
                 $('#crudConfirmSummary').html(summaryHtml);
-                $('#crudConfirmYesText').text(action === 'add' ? 'Yes, Add User' : 'Yes, Update User');
+                $('#crudConfirmYesText').text(action === 'add' ? `Yes, Add ${confirmLabel}` : `Yes, Update ${confirmLabel}`);
 
                 // Hide form section, show confirmation section
                 $('#crudFormSection').hide();
@@ -1954,10 +1988,13 @@ if (typeof window.initPageScripts === 'function') {
                                 $('#crudNormalFooter').show();
 
                                 // Show success modal
-                                showSuccessModal(action === 'add' ? 'User Added Successfully' : 'User Updated Successfully',
+                                const successLabel = entity === 'attendants' && response.data && String(response.data.user_type_id || '') === '4'
+                                    ? 'Guest'
+                                    : 'User';
+                                showSuccessModal(action === 'add' ? `${successLabel} Added Successfully` : `${successLabel} Updated Successfully`,
                                     action === 'add'
-                                        ? `User "${formData.first_name} ${formData.last_name}" has been added to the system.`
-                                        : `User "${formData.first_name} ${formData.last_name}" has been updated successfully.`);
+                                        ? `${successLabel} "${formData.first_name} ${formData.last_name}" has been added to the system.`
+                                        : `${successLabel} "${formData.first_name} ${formData.last_name}" has been updated successfully.`);
 
                                 // Update table dynamically instead of reloading
                                 if (action === 'add' && response.data) {
@@ -1965,9 +2002,12 @@ if (typeof window.initPageScripts === 'function') {
                                         if (response.data.user_type_id == 3) {
                                             console.log('Adding new admin to table');
                                             addAdminToTable(response.data);
-                                        } else {
+                                        } else if (response.data.user_type_id == 2) {
                                             console.log('Adding new attendant to table');
                                             addAttendantToTable(response.data);
+                                        } else {
+                                            console.log('Adding new guest to user table');
+                                            addUserToTable(response.data);
                                         }
                                     } else {
                                         console.log('Adding new user to table');
@@ -1975,8 +2015,13 @@ if (typeof window.initPageScripts === 'function') {
                                     }
                                 } else if (action === 'edit' && response.data) {
                                     if (entity === 'attendants') {
-                                        console.log('Updating staff in table');
-                                        updateStaffInTable(response.data);
+                                        if (response.data.user_type_id == 2 || response.data.user_type_id == 3) {
+                                            console.log('Updating staff in table');
+                                            updateStaffInTable(response.data);
+                                        } else {
+                                            console.log('Updating guest in user table');
+                                            updateUserInTable(response.data);
+                                        }
                                     } else {
                                         console.log('Updating subscriber in table');
                                         updateUserInTable(response.data);
@@ -1987,9 +2032,13 @@ if (typeof window.initPageScripts === 'function') {
                                 if (response.stats) {
                                     let type = 'subscribers';
                                     if (entity === 'attendants') {
-                                        const activeTab = $('.nav-tabs .nav-link.active').attr('data-bs-target');
-                                        if (activeTab === '#admins') type = 'admins';
-                                        else type = 'attendants';
+                                        if (response.data && String(response.data.user_type_id || '') === '4') {
+                                            type = 'subscribers';
+                                        } else {
+                                            const activeTab = $('.nav-tabs .nav-link.active').attr('data-bs-target');
+                                            if (activeTab === '#admins') type = 'admins';
+                                            else type = 'attendants';
+                                        }
                                     }
                                     updateStats(response.stats, type);
                                 }
@@ -2717,6 +2766,47 @@ if (typeof window.initPageScripts === 'function') {
                 $('#attendantEmail').val('').prop('readonly', false);
                 $('#attendantPassword').val('');
                 $('#attendantEmployeeSuggestions').addClass('d-none').empty();
+                $('#attendantEmployeeSearch').data('guest-mode', false);
+            }
+
+            function setAttendantIdentifierMode(isGuest) {
+                const $identifierInput = $('#attendantEmployeeSearch');
+
+                $identifierInput.data('guest-mode', !!isGuest);
+                $identifierInput.attr('name', isGuest ? 'plate_number' : 'employee_search');
+                $identifierInput.attr('placeholder', isGuest ? 'Type plate number' : 'Type to search employees');
+                $('#attendantIdentifierLabel').html(isGuest
+                    ? 'Plate Number <span class="text-danger">*</span>'
+                    : 'Input Administrator <span class="text-danger">*</span>');
+                $('#attendantIdentifierHelp').text(isGuest
+                    ? 'The plate number is used to identify the guest and will be saved as the guest reference.'
+                    : 'The employee is suggested from the name, ID, or email, and can still be adjusted if needed.');
+
+                if (isGuest) {
+                    $('#attendantEmployeeSuggestions').addClass('d-none').empty();
+                    $identifierInput.prop('readonly', false);
+                }
+            }
+
+            function setAttendantRoleMode(typeId) {
+                const isStaticRole = !!typeId;
+                const roleName = typeId == 3 ? 'Administrator' : (typeId == 2 ? 'Parking Attendant' : (typeId == 4 ? 'Guest' : 'Staff'));
+
+                $('#attendantUserTypeIdContainer').toggleClass('d-none', isStaticRole);
+                $('#attendantUserTypeId').prop('disabled', false);
+                $('#attendantUserTypeStaticDisplay')
+                    .toggleClass('d-none', !isStaticRole)
+                    .val(roleName);
+
+                $('#hiddenUserTypeId').remove();
+                if (isStaticRole) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'hiddenUserTypeId',
+                        name: 'user_type_id',
+                        value: typeId
+                    }).insertBefore('#attendantUserTypeIdContainer');
+                }
             }
 
             $(document).off('input.usersSubscriberSuggest', '#userStudentId').on('input.usersSubscriberSuggest', '#userStudentId', function () {
@@ -2756,10 +2846,18 @@ if (typeof window.initPageScripts === 'function') {
             });
 
             $(document).off('input.usersEmployeeSuggest', '#attendantEmployeeSearch').on('input.usersEmployeeSuggest', '#attendantEmployeeSearch', function () {
+                if ($(this).data('guest-mode')) {
+                    hideEmployeeSuggestions();
+                    return;
+                }
                 renderEmployeeSuggestionsFromApi($(this).val());
             });
 
             $(document).off('focus.usersEmployeeSuggest', '#attendantEmployeeSearch').on('focus.usersEmployeeSuggest', '#attendantEmployeeSearch', function () {
+                if ($(this).data('guest-mode')) {
+                    hideEmployeeSuggestions();
+                    return;
+                }
                 renderEmployeeSuggestionsFromApi($(this).val());
             });
 
@@ -2872,11 +2970,12 @@ if (typeof window.initPageScripts === 'function') {
                         }
                     });
 
-                    // Determine User Type (Admin vs Attendant)
+                    // Determine User Type (Admin vs Attendant vs Guest)
                     let typeId = forceTypeId;
                     if (!typeId && data) {
                         typeId = data.user_type_id;
                     }
+                    const isGuestType = String(typeId || '').trim() === '4';
 
                     // Set Title explicitly based on Type
                       if (typeId == 3) { // Admin
@@ -2891,33 +2990,10 @@ if (typeof window.initPageScripts === 'function') {
 
                     // Handle Static User Type Logic (Text Box vs Dropdown)
                     if ($('#attendantUserTypeId').length) {
-                        // Reset: Show dropdown, remove any static text, remove hidden input
-                        $('#attendantUserTypeId').show().prop('disabled', false);
-                        $('#attendantUserTypeId').closest('.mb-3').find('.static-role-text').remove();
-                        $('#hiddenUserTypeId').remove();
+                        setAttendantRoleMode(typeId);
+                        $('#staticRoleWarning').toggle(!!typeId);
 
                         if (typeId) {
-                            // STATIC MODE: Hide dropdown, show readonly text
-                            $('#attendantUserTypeId').hide().val(typeId); // Ensure value is set
-
-                            const roleName = typeId == 3 ? 'Administrator' : (typeId == 2 ? 'Parking Attendant' : (typeId == 4 ? 'Guest' : 'Staff'));
-                            const staticRoleHtml = `<input type="text" class="form-control static-role-text" value="${roleName}" readonly style="background-color: #e9ecef;">`;
-
-                            const $staticInput = $(staticRoleHtml);
-                            $staticInput.addClass('form-control-integrity-locked');
-                            $('#attendantUserTypeId').after($staticInput);
-
-                            // Show Warning Banner
-                            $('#staticRoleWarning').show();
-
-                            // Add hidden input for form submission
-                            $('<input>').attr({
-                                type: 'hidden',
-                                id: 'hiddenUserTypeId',
-                                name: 'user_type_id',
-                                value: typeId
-                            }).insertBefore('#attendantUserTypeId');
-
                             // Handle visibility of Assigned Area based on type
                             toggleAssignedAreaField(typeId);
                         } else {
@@ -2926,20 +3002,32 @@ if (typeof window.initPageScripts === 'function') {
                         }
                     }
 
+                    setAttendantIdentifierMode(isGuestType);
+
                     if (action === 'edit' && data) {
                         $('#crudFormModal').removeClass('mode-add').addClass('mode-edit');
                         $('.edit-only').show();
                         $('#attendantFirstName').val(data.first_name);
                         $('#attendantLastName').val(data.last_name);
                         $('#attendantEmail').val(data.email);
-                        $('#attendantEmployeeSearch').val([String(data.first_name || '').trim(), String(data.last_name || '').trim()].filter(Boolean).join(' '));
+                        $('#attendantEmployeeSearch').val(isGuestType
+                            ? String(data.external_user_id || '')
+                            : [String(data.first_name || '').trim(), String(data.last_name || '').trim()].filter(Boolean).join(' '));
                         $('#attendantAssignedArea').val(data.assigned_area_id);
                         $('#attendantEmployeeSearch, #attendantFirstName, #attendantLastName, #attendantEmail').prop('readonly', true);
+
+                        if (isGuestType) {
+                            $('#attendantFirstName, #attendantLastName, #attendantEmail, #attendantEmployeeSearch').prop('readonly', false);
+                        }
 
                         if (data.status === 'suspended') {
                             $('#attendantSuspendAccount').prop('checked', true);
                         } else {
                             $('#attendantSuspendAccount').prop('checked', false);
+                        }
+
+                        if (isGuestType) {
+                            $('#attendantEmployeeSearch').prop('readonly', false);
                         }
                     } else {
                         // Reset defaults for Add
@@ -2948,7 +3036,10 @@ if (typeof window.initPageScripts === 'function') {
                         }
                         $('#attendantSuspendAccount').prop('checked', false); // Default to not suspended for add
                         $('#attendantEmployeeSearch').val('').prop('readonly', false);
-                        $('#attendantFirstName, #attendantLastName, #attendantEmail').val('').prop('readonly', true);
+                        $('#attendantFirstName, #attendantLastName, #attendantEmail').val('').prop('readonly', !isGuestType);
+                        if (isGuestType) {
+                            $('#attendantEmployeeSearch').prop('readonly', false);
+                        }
                     }
                 }
 
@@ -2970,7 +3061,7 @@ if (typeof window.initPageScripts === 'function') {
             }
 
             // Reset footer when modal is closed
-            $('#crudFormModal').off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                $('#crudFormModal').off('hidden.bs.modal').on('hidden.bs.modal', function () {
                 // Show form section, hide confirmation section
                 $('#crudFormSection').show();
                 $('#crudConfirmSection').hide();
@@ -2990,12 +3081,12 @@ if (typeof window.initPageScripts === 'function') {
                 // Re-enable and show user type dropdowns if they were disabled/hidden
                 $('#userTypeId').prop('disabled', false).show();
                 $('#userUserTypeId').prop('disabled', false).show();
+                $('#attendantUserTypeIdContainer').removeClass('d-none');
                 $('#attendantUserTypeId').prop('disabled', false).show();
-                // Remove any static role display
-                $('.static-role-text').remove();
+                $('#attendantUserTypeStaticDisplay').addClass('d-none');
                 $('.password-field').show();
                 $('#userUserTypeId').closest('.mb-3').next('.form-control.bg-light').remove();
-                $('#attendantUserTypeId').closest('.mb-3').next('.form-control.bg-light').remove();
+                setAttendantIdentifierMode(false);
             });
 
             // ====================================
