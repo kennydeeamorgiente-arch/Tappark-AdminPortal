@@ -1250,7 +1250,9 @@
 
 [data-bs-theme="dark"] #areasFiltersCard .form-control,
 [data-bs-theme="dark"] #areasFiltersCard .tappark-select-toggle,
-[data-bs-theme="dark"] #areaSectionsModal .form-control {
+[data-bs-theme="dark"] #areaSectionsModal .form-control,
+[data-bs-theme="dark"] #areaSectionsModal .form-select,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-toggle {
     background: #2f2428 !important;
     border-color: rgba(217, 151, 160, 0.28) !important;
     color: #f4e1e4 !important;
@@ -1258,10 +1260,39 @@
 
 [data-bs-theme="dark"] #areasFiltersCard .form-control:focus,
 [data-bs-theme="dark"] #areasFiltersCard .tappark-select.open .tappark-select-toggle,
-[data-bs-theme="dark"] #areaSectionsModal .form-control:focus {
+[data-bs-theme="dark"] #areaSectionsModal .form-control:focus,
+[data-bs-theme="dark"] #areaSectionsModal .form-select:focus,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select.open .tappark-select-toggle {
     background: #37292e !important;
     border-color: rgba(231, 172, 180, 0.42) !important;
     box-shadow: 0 0 0 0.18rem rgba(184, 93, 103, 0.16) !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-toggle i {
+    color: #c9adb3 !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-menu {
+    background: linear-gradient(180deg, #382a30 0%, #2f2428 100%) !important;
+    border-color: rgba(231, 172, 180, 0.36) !important;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.38) !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option {
+    color: #f4e1e4 !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option:hover,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option:focus {
+    background: rgba(231, 172, 180, 0.12) !important;
+    color: #ffe9ec !important;
+}
+
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option.active,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option.active:hover,
+[data-bs-theme="dark"] #areaSectionsModal .tappark-select-option.active:focus {
+    background: #7e343a !important;
+    color: #fff3f5 !important;
 }
 
 [data-bs-theme="dark"] #areasGrid .area-card .btn-outline-primary.flex-fill {

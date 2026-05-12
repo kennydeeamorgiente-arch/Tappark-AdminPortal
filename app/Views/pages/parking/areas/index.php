@@ -178,10 +178,7 @@
                     </div>
                     <div class="col-md-8">
                         <label class="form-label mb-1">Search</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" class="form-control" id="areaSectionsSearchInput" placeholder="Search section name..." disabled>
-                        </div>
+                        <input type="text" class="form-control" id="areaSectionsSearchInput" placeholder="Search section name..." disabled>
                     </div>
                 </div>
 
@@ -278,17 +275,23 @@
      color: white !important;
  }
  [data-bs-theme="dark"] #areaSectionsModal .form-label {
-     color: #e0c5c5 !important;
+     color: #c9adb3 !important;
  }
  [data-bs-theme="dark"] #areaSectionsModal .form-select,
- [data-bs-theme="dark"] #areaSectionsModal .form-control,
- [data-bs-theme="dark"] #areaSectionsModal .input-group-text {
-     background: #342828 !important;
-     border-color: #574343 !important;
-     color: #f1dfdf !important;
+ [data-bs-theme="dark"] #areaSectionsModal .form-control {
+     background: #2f2428 !important;
+     border-color: rgba(217, 151, 160, 0.28) !important;
+     color: #f4e1e4 !important;
+ }
+ [data-bs-theme="dark"] #areaSectionsModal .form-select:focus,
+ [data-bs-theme="dark"] #areaSectionsModal .form-control:focus {
+     background: #37292e !important;
+     border-color: rgba(231, 172, 180, 0.42) !important;
+     box-shadow: 0 0 0 0.18rem rgba(184, 93, 103, 0.16) !important;
  }
  [data-bs-theme="dark"] #areaSectionsModal #areaSectionsSearchInput::placeholder {
-     color: #b89f9f !important;
+     color: #c9adb3 !important;
+     opacity: 0.72 !important;
  }
  [data-bs-theme="dark"] #areaSectionsModal #areaSectionsList .area-section-row {
      background: #2d2323 !important;
