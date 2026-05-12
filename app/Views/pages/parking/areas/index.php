@@ -29,10 +29,7 @@
                     <div class="compact-filter-row">
                         <div class="compact-filter-field compact-filter-search">
                             <label class="form-label"><i class="fas fa-search me-2"></i>Search Areas</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input type="text" class="form-control" id="searchInput" placeholder="Search areas...">
-                            </div>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search areas...">
                         </div>
                         <div class="compact-filter-field compact-filter-medium" style="flex: 1 1 210px;">
                             <label class="form-label"><i class="fas fa-filter me-2"></i>Status</label>

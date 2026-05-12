@@ -1239,3 +1239,146 @@ line-height: 1;
 [data-bs-theme="dark"] #layoutVisualizationContent .card .text-muted {
     color: #c7acac !important;
 }
+
+/* Parking overview polish: match filter/search controls and dropdowns to the soft dark theme. */
+#parkingOverviewFiltersCard .compact-filter-row,
+#sectionGridModal .input-group {
+align-items: stretch;
+}
+
+#parkingOverviewFiltersCard .input-group,
+#sectionGridModal .input-group {
+border-radius: 8px;
+}
+
+#parkingOverviewFiltersCard .input-group-text,
+#sectionGridModal .input-group-text {
+width: 42px;
+justify-content: center;
+border-radius: 8px 0 0 8px !important;
+}
+
+#parkingOverviewFiltersCard .input-group .form-control,
+#sectionGridModal .input-group .form-control {
+border-radius: 0 8px 8px 0 !important;
+}
+
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .card-body {
+background: #2b2125 !important;
+}
+
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .compact-filter-field .form-label,
+[data-bs-theme="dark"] #sectionGridModal .form-label {
+color: #c9adb3 !important;
+}
+
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .input-group-text,
+[data-bs-theme="dark"] #sectionGridModal .input-group-text {
+background: #281f23 !important;
+border-color: rgba(217, 151, 160, 0.28) !important;
+color: #c9adb3 !important;
+}
+
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .form-control,
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .tappark-select-toggle,
+[data-bs-theme="dark"] #sectionGridModal .form-control,
+[data-bs-theme="dark"] #sectionGridModal .dropdown-toggle {
+background: #2f2428 !important;
+border-color: rgba(217, 151, 160, 0.28) !important;
+color: #f4e1e4 !important;
+}
+
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .form-control:focus,
+[data-bs-theme="dark"] #parkingOverviewFiltersCard .tappark-select.open .tappark-select-toggle,
+[data-bs-theme="dark"] #sectionGridModal .form-control:focus,
+[data-bs-theme="dark"] #sectionGridModal .dropdown-toggle:focus,
+[data-bs-theme="dark"] #sectionGridModal .dropdown-toggle.show {
+background: #37292e !important;
+border-color: rgba(231, 172, 180, 0.42) !important;
+box-shadow: 0 0 0 0.18rem rgba(184, 93, 103, 0.16) !important;
+}
+
+[data-bs-theme="dark"] #sectionGridModal .dropdown-menu {
+background: linear-gradient(180deg, #382a30 0%, #2f2428 100%) !important;
+border-color: rgba(231, 172, 180, 0.42) !important;
+box-shadow: 0 18px 38px rgba(0, 0, 0, 0.38) !important;
+}
+
+[data-bs-theme="dark"] #sectionGridModal .dropdown-item {
+color: #f4e1e4 !important;
+}
+
+[data-bs-theme="dark"] #sectionGridModal .dropdown-item:hover,
+[data-bs-theme="dark"] #sectionGridModal .dropdown-item:focus {
+background: rgba(231, 172, 180, 0.12) !important;
+color: #ffe9ec !important;
+}
+
+[data-bs-theme="dark"] #sectionGridModal .dropdown-item.active {
+background: linear-gradient(135deg, #7e343a 0%, #9b4650 100%) !important;
+color: #fff3f5 !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .area-card .btn-view-details,
+[data-bs-theme="dark"] #parkingAreasContainer .area-card .btn-outline-primary.btn-view-details {
+background: #7e343a !important;
+border: 1px solid rgba(231, 172, 180, 0.34) !important;
+color: #fff3f5 !important;
+box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .area-card .btn-view-details:hover,
+[data-bs-theme="dark"] #parkingAreasContainer .area-card .btn-view-details:focus,
+[data-bs-theme="dark"] #parkingAreasContainer .area-card .btn-outline-primary.btn-view-details:hover,
+[data-bs-theme="dark"] #parkingAreasContainer .area-card .btn-outline-primary.btn-view-details:focus {
+background: #8c3d44 !important;
+border-color: rgba(244, 196, 202, 0.48) !important;
+color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .badge,
+[data-bs-theme="dark"] #areaDetailModal .badge,
+[data-bs-theme="dark"] #sectionGridModal .badge {
+border: 1px solid transparent !important;
+box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .badge.bg-success,
+[data-bs-theme="dark"] #areaDetailModal .badge.bg-success,
+[data-bs-theme="dark"] #sectionGridModal .badge.bg-success {
+background: rgba(63, 118, 82, 0.72) !important;
+border-color: rgba(142, 204, 161, 0.28) !important;
+color: #d7f5dc !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .badge.bg-secondary,
+[data-bs-theme="dark"] #areaDetailModal .badge.bg-secondary,
+[data-bs-theme="dark"] #sectionGridModal .badge.bg-secondary {
+background: rgba(110, 95, 101, 0.72) !important;
+border-color: rgba(214, 188, 193, 0.22) !important;
+color: #ead7db !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .badge.bg-info,
+[data-bs-theme="dark"] #areaDetailModal .badge.bg-info,
+[data-bs-theme="dark"] #sectionGridModal .badge.bg-info {
+background: rgba(67, 117, 138, 0.74) !important;
+border-color: rgba(145, 204, 224, 0.28) !important;
+color: #d7f2fb !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .badge.bg-warning,
+[data-bs-theme="dark"] #areaDetailModal .badge.bg-warning,
+[data-bs-theme="dark"] #sectionGridModal .badge.bg-warning {
+background: rgba(154, 116, 38, 0.76) !important;
+border-color: rgba(238, 195, 91, 0.3) !important;
+color: #ffe7ad !important;
+}
+
+[data-bs-theme="dark"] #parkingAreasContainer .badge.bg-danger,
+[data-bs-theme="dark"] #areaDetailModal .badge.bg-danger,
+[data-bs-theme="dark"] #sectionGridModal .badge.bg-danger {
+background: rgba(145, 59, 66, 0.72) !important;
+border-color: rgba(239, 157, 166, 0.28) !important;
+color: #ffd8dc !important;
+}

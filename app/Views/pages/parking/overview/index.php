@@ -113,10 +113,7 @@
                 </div>
                 <div class="compact-filter-field compact-filter-search">
                     <label class="form-label"><i class="fas fa-search me-2"></i>Search</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="areaSearchInput" placeholder="Search areas...">
-                    </div>
+                    <input type="text" class="form-control" id="areaSearchInput" placeholder="Search areas...">
                 </div>
                 <div class="compact-filter-actions filter-actions filter-actions-visible" id="parkingFilterActions">
                         <button class="btn btn-primary" id="applyParkingFilterBtn">
