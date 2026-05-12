@@ -48,118 +48,100 @@ class Profile extends BaseController
                 ])->setStatusCode(403);
             }
 
-            // Get posted data
-            $data = [
-                'first_name' => $this->request->getPost('first_name'),
-                'last_name' => $this->request->getPost('last_name'),
-                'email' => $this->request->getPost('email')
-            ];
-
-            // Validation
-            $validation = \Config\Services::validation();
-            $validation->setRules([
-                'first_name' => 'required|min_length[2]|max_length[50]',
-                'last_name' => 'required|min_length[2]|max_length[50]',
-                'email' => "required|valid_email|is_unique[users.email,user_id,{$userId}]"
-            ]);
-
-            if (!$validation->run($data)) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validation->getErrors()
-                ])->setStatusCode(400);
-            }
-
             // Handle profile picture upload
             $profilePicture = $this->request->getFile('profile_picture');
-            
-            // Only process file if it exists and is valid
-            if ($profilePicture && $profilePicture->isValid() && !$profilePicture->hasMoved()) {
-                // Get user data to check for old profile picture
-                $user = $this->userModel->find($userId);
-                
-                // Define upload path
-                $uploadPath = ROOTPATH . 'public/uploads/profiles/';
-                
-                // Create directory if it doesn't exist
-                if (!is_dir($uploadPath)) {
-                    mkdir($uploadPath, 0755, true);
-                }
-                
-                // Validate file
-                $maxSize = 2 * 1024 * 1024; // 2MB
-                $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                $maxDimensions = [2048, 2048]; // Max width/height
-                
-                if ($profilePicture->getSize() > $maxSize) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'File size exceeds 2MB limit'
-                    ])->setStatusCode(400);
-                }
-                
-                if (!in_array($profilePicture->getMimeType(), $allowedTypes)) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Invalid file type. Only JPEG, PNG, and GIF images are allowed'
-                    ])->setStatusCode(400);
-                }
-                
-                // Validate file extension
-                $extension = strtolower($profilePicture->getClientExtension());
-                if (!in_array($extension, $allowedExtensions)) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Invalid file extension. Only JPEG, PNG, and GIF images are allowed'
-                    ])->setStatusCode(400);
-                }
-                
-                // Validate actual image content (prevent fake images)
-                $imageInfo = @getimagesize($profilePicture->getTempName());
-                if (!$imageInfo) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Invalid image file or corrupted image'
-                    ])->setStatusCode(400);
-                }
-                
-                // Check image dimensions
-                list($width, $height) = $imageInfo;
-                if ($width > $maxDimensions[0] || $height > $maxDimensions[1]) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => "Image dimensions too large. Maximum allowed: {$maxDimensions[0]}x{$maxDimensions[1]} pixels"
-                    ])->setStatusCode(400);
-                }
-                
-                // Get file extension
-                $extension = $profilePicture->getClientExtension();
-                
-                // Generate secure random filename
-                $newName = 'profile_' . $userId . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
-                
-                // Move uploaded file
-                $moved = $profilePicture->move($uploadPath, $newName);
-                
-                if ($moved) {
-                    // Delete old profile picture if exists
-                    if (!empty($user['profile_picture']) && file_exists($uploadPath . $user['profile_picture'])) {
-                        @unlink($uploadPath . $user['profile_picture']);
-                    }
-                    
-                    // Add profile picture filename to data array
-                    $data['profile_picture'] = $newName;
-                } else {
-                    $errorMsg = $profilePicture->getErrorString() ?: 'Unknown upload error';
-                    log_message('error', 'Profile::update File Move Failed: ' . $errorMsg);
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Failed to upload profile picture: ' . $errorMsg
-                    ])->setStatusCode(500);
-                }
+            if (!$profilePicture || !$profilePicture->isValid() || $profilePicture->hasMoved()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Please choose a profile picture to update.'
+                ])->setStatusCode(400);
             }
+            
+            // Get user data to check for old profile picture
+            $user = $this->userModel->find($userId);
+            
+            // Define upload path
+            $uploadPath = ROOTPATH . 'public/uploads/profiles/';
+            
+            // Create directory if it doesn't exist
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+            
+            // Validate file
+            $maxSize = 2 * 1024 * 1024; // 2MB
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            $maxDimensions = [2048, 2048]; // Max width/height
+            
+            if ($profilePicture->getSize() > $maxSize) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'File size exceeds 2MB limit'
+                ])->setStatusCode(400);
+            }
+            
+            if (!in_array($profilePicture->getMimeType(), $allowedTypes)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid file type. Only JPEG, PNG, and GIF images are allowed'
+                ])->setStatusCode(400);
+            }
+            
+            // Validate file extension
+            $extension = strtolower($profilePicture->getClientExtension());
+            if (!in_array($extension, $allowedExtensions)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid file extension. Only JPEG, PNG, and GIF images are allowed'
+                ])->setStatusCode(400);
+            }
+            
+            // Validate actual image content (prevent fake images)
+            $imageInfo = @getimagesize($profilePicture->getTempName());
+            if (!$imageInfo) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Invalid image file or corrupted image'
+                ])->setStatusCode(400);
+            }
+            
+            // Check image dimensions
+            list($width, $height) = $imageInfo;
+            if ($width > $maxDimensions[0] || $height > $maxDimensions[1]) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => "Image dimensions too large. Maximum allowed: {$maxDimensions[0]}x{$maxDimensions[1]} pixels"
+                ])->setStatusCode(400);
+            }
+            
+            // Get file extension
+            $extension = $profilePicture->getClientExtension();
+            
+            // Generate secure random filename
+            $newName = 'profile_' . $userId . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+            
+            // Move uploaded file
+            $moved = $profilePicture->move($uploadPath, $newName);
+            
+            if (!$moved) {
+                $errorMsg = $profilePicture->getErrorString() ?: 'Unknown upload error';
+                log_message('error', 'Profile::update File Move Failed: ' . $errorMsg);
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to upload profile picture: ' . $errorMsg
+                ])->setStatusCode(500);
+            }
+
+            // Delete old profile picture if exists
+            if (!empty($user['profile_picture']) && file_exists($uploadPath . $user['profile_picture'])) {
+                @unlink($uploadPath . $user['profile_picture']);
+            }
+            
+            // Update only the profile picture
+            $data = [
+                'profile_picture' => $newName
+            ];
 
             // Update user in database
             $this->userModel->skipValidation(true);
@@ -169,24 +151,11 @@ class Profile extends BaseController
                 // Get updated user data from database
                 $updatedUser = $this->userModel->find($userId);
                 
-                // Update session with new data
-                $sessionData = [
-                    'first_name' => $data['first_name'],
-                    'last_name' => $data['last_name'],
-                    'email' => $data['email']
-                ];
-                
-                // Update profile picture in session if changed
-                if (!empty($data['profile_picture'])) {
-                    $sessionData['profile_picture'] = $data['profile_picture'];
-                } elseif (!empty($updatedUser['profile_picture'])) {
-                    $sessionData['profile_picture'] = $updatedUser['profile_picture'];
-                }
-                
-                session()->set($sessionData);
+                // Update profile picture in session
+                session()->set(['profile_picture' => $data['profile_picture']]);
 
                 // Log the profile update activity
-                log_update('User Profile', $userId, $data['first_name'] . ' ' . $data['last_name']);
+                log_update('User Profile', $userId, trim(($updatedUser['first_name'] ?? '') . ' ' . ($updatedUser['last_name'] ?? '')));
 
                 $response = [
                     'success' => true,
