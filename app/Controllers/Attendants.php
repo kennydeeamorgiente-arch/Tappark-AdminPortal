@@ -95,7 +95,7 @@ class Attendants extends BaseController
         }
 
         // Verify user is attendant (admin = 3, attendants = 2)
-        if (!in_array($user['user_type_id'], [UserModel::ROLE_ATTENDANT, UserModel::ROLE_ADMIN])) {
+        if (!in_array($user['user_type_id'], [UserModel::ROLE_ATTENDANT, UserModel::ROLE_ADMIN, UserModel::ROLE_GUEST])) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'User is not an admin or attendant'
@@ -143,24 +143,34 @@ class Attendants extends BaseController
      */
     public function create()
     {
+        $userTypeId = (int) $this->request->getPost('user_type_id');
+        $identifier = trim((string) ($this->request->getPost('plate_number') ?? $this->request->getPost('external_user_id') ?? ''));
+        $isGuest = $userTypeId === UserModel::ROLE_GUEST;
+
         $data = [
             'first_name' => $this->request->getPost('first_name'),
             'last_name' => $this->request->getPost('last_name'),
             'email' => $this->request->getPost('email'),
             'password' => $this->request->getPost('password'),
-            'user_type_id' => $this->request->getPost('user_type_id'),
+            'user_type_id' => $userTypeId,
             'assigned_area_id' => $this->request->getPost('assigned_area_id') ?: null,
             'status' => $this->request->getPost('status'),
             'tokens' => 0
         ];
 
+        if ($isGuest && $identifier !== '') {
+            $data['external_user_id'] = $identifier;
+            $data['plate_number'] = $identifier;
+        }
+
         // Validate
+        $passwordRule = $isGuest ? 'permit_empty|min_length[6]' : 'required|min_length[6]';
         if (!$this->validate([
             'first_name' => 'required|min_length[2]|max_length[100]',
             'last_name' => 'required|min_length[2]|max_length[100]',
             'email' => 'required|valid_email|is_unique[users.email]',
-            'password' => 'required|min_length[6]',
-            'user_type_id' => 'required|in_list[' . UserModel::ROLE_ATTENDANT . ',' . UserModel::ROLE_ADMIN . ']', // Only attendant and admin types
+            'password' => $passwordRule,
+            'user_type_id' => 'required|in_list[' . UserModel::ROLE_ATTENDANT . ',' . UserModel::ROLE_ADMIN . ',' . UserModel::ROLE_GUEST . ']', // Staff and guest types
             'status' => 'required|in_list[active,inactive]'
         ])) {
             return $this->response->setJSON([
@@ -170,22 +180,30 @@ class Attendants extends BaseController
             ])->setStatusCode(400);
         }
 
+        if ($isGuest && $identifier === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => ['plate_number' => 'Plate number is required.']
+            ])->setStatusCode(400);
+        }
+
         $userId = $this->userModel->createUser($data);
 
         if ($userId) {
             // Log activity
-            $typeName = 'Attendant';
+            $typeName = $isGuest ? 'Guest' : 'Attendant';
             log_create($typeName, $userId, "{$data['first_name']} {$data['last_name']}");
 
             // Get the full attendant data for dynamic table update
             $newAttendant = $this->userModel->getAttendantById($userId);
             
             // Get updated stats
-            $stats = $this->userModel->getAttendantStats();
+            $stats = $isGuest ? $this->userModel->getUserStats() : $this->userModel->getAttendantStats();
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Attendant created successfully',
+                'message' => $isGuest ? 'Guest created successfully' : 'Attendant created successfully',
                 'data' => $newAttendant,
                 'stats' => $stats
             ]);
@@ -211,22 +229,31 @@ class Attendants extends BaseController
             ])->setStatusCode(404);
         }
 
-        // Verify user is attendant (admin = 3, attendants = 2)
-        if (!in_array($user['user_type_id'], [UserModel::ROLE_ATTENDANT, UserModel::ROLE_ADMIN])) {
+        // Verify user is a staff member or guest
+        if (!in_array($user['user_type_id'], [UserModel::ROLE_ATTENDANT, UserModel::ROLE_ADMIN, UserModel::ROLE_GUEST])) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'User is not an admin or attendant'
+                'message' => 'User is not an admin, attendant, or guest'
             ])->setStatusCode(403);
         }
+
+        $userTypeId = (int) $this->request->getPost('user_type_id');
+        $identifier = trim((string) ($this->request->getPost('plate_number') ?? $this->request->getPost('external_user_id') ?? ''));
+        $isGuest = $userTypeId === UserModel::ROLE_GUEST;
 
         $data = [
             'first_name' => $this->request->getPost('first_name'),
             'last_name' => $this->request->getPost('last_name'),
             'email' => $this->request->getPost('email'),
-            'user_type_id' => $this->request->getPost('user_type_id'),
+            'user_type_id' => $userTypeId,
             'assigned_area_id' => $this->request->getPost('assigned_area_id') ?: null,
             'status' => $this->request->getPost('status')
         ];
+
+        if ($isGuest && $identifier !== '') {
+            $data['external_user_id'] = $identifier;
+            $data['plate_number'] = $identifier;
+        }
 
         $password = $this->request->getPost('password');
         if (!empty($password)) {
@@ -238,9 +265,15 @@ class Attendants extends BaseController
             'first_name' => 'required|min_length[2]|max_length[100]',
             'last_name' => 'required|min_length[2]|max_length[100]',
             'email' => "required|valid_email|is_unique[users.email,user_id,{$userId}]",
-            'user_type_id' => 'required|in_list[' . UserModel::ROLE_ATTENDANT . ',' . UserModel::ROLE_ADMIN . ']',
+            'user_type_id' => 'required|in_list[' . UserModel::ROLE_ATTENDANT . ',' . UserModel::ROLE_ADMIN . ',' . UserModel::ROLE_GUEST . ']',
             'status' => 'required|in_list[active,inactive,suspended]'
         ];
+
+        if ($isGuest) {
+            $rules['plate_number'] = 'required';
+        } else {
+            $rules['password'] = 'permit_empty|min_length[6]';
+        }
 
         if (!empty($password)) {
             $rules['password'] = 'min_length[6]';
@@ -254,20 +287,28 @@ class Attendants extends BaseController
             ])->setStatusCode(400);
         }
 
+        if ($isGuest && $identifier === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => ['plate_number' => 'Plate number is required.']
+            ])->setStatusCode(400);
+        }
+
         if ($this->userModel->updateUser($userId, $data)) {
             // Log activity
-            $typeName = 'Attendant';
+            $typeName = $isGuest ? 'Guest' : 'Attendant';
             log_update($typeName, $userId, "{$data['first_name']} {$data['last_name']}");
 
             // Get the updated attendant data for dynamic table update
             $updatedAttendant = $this->userModel->getAttendantById($userId);
             
             // Get updated stats
-            $stats = $this->userModel->getAttendantStats();
+            $stats = $isGuest ? $this->userModel->getUserStats() : $this->userModel->getAttendantStats();
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Attendant updated successfully',
+                'message' => $isGuest ? 'Guest updated successfully' : 'Attendant updated successfully',
                 'data' => $updatedAttendant,
                 'stats' => $stats
             ]);
@@ -294,25 +335,25 @@ class Attendants extends BaseController
             ])->setStatusCode(404);
         }
 
-        // Verify user is attendant (admin = 3, attendants = 2)
-        if (!in_array($user['user_type_id'], [UserModel::ROLE_ATTENDANT, UserModel::ROLE_ADMIN])) {
+        // Verify user is a staff member or guest
+        if (!in_array($user['user_type_id'], [UserModel::ROLE_ATTENDANT, UserModel::ROLE_ADMIN, UserModel::ROLE_GUEST])) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'User is not an admin or attendant'
+                'message' => 'User is not an admin, attendant, or guest'
             ])->setStatusCode(403);
         }
 
         if ($this->userModel->deleteUser($userId)) {
             // Log activity
-            $typeName = 'Attendant';
+            $typeName = $user['user_type_id'] === UserModel::ROLE_GUEST ? 'Guest' : 'Attendant';
             log_delete($typeName, $userId, "{$user['first_name']} {$user['last_name']}");
             
             // Get updated stats
-            $stats = $this->userModel->getAttendantStats();
+            $stats = $user['user_type_id'] === UserModel::ROLE_GUEST ? $this->userModel->getUserStats() : $this->userModel->getAttendantStats();
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Attendant deleted successfully',
+                'message' => $user['user_type_id'] === UserModel::ROLE_GUEST ? 'Guest deleted successfully' : 'Attendant deleted successfully',
                 'stats' => $stats
             ]);
         }

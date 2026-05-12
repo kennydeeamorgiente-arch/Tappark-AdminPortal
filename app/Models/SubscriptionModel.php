@@ -11,14 +11,14 @@ class SubscriptionModel extends Model
     protected $allowedFields = [
         'plan_name',
         'cost',
-        'number_of_hours',
+        'number_of_tokens',
         'description'
     ];
     protected $useTimestamps = false;
     protected $validationRules = [
         'plan_name' => 'required|min_length[3]|max_length[120]|is_unique[plans.plan_name,plan_id,{plan_id}]',
         'cost' => 'required|numeric|greater_than_equal_to[0]|less_than[1000000]',
-        'number_of_hours' => 'required|integer|greater_than[0]|less_than[10000]'
+        'number_of_tokens' => 'required|integer|greater_than[0]|less_than[10000]'
     ];
     protected $validationMessages = [
         'plan_name' => [
@@ -101,21 +101,21 @@ class SubscriptionModel extends Model
         if (!empty($filters['hours_range'])) {
             $range = $filters['hours_range'];
             if ($range === '1-10') {
-                $builder->where('p.number_of_hours >=', 1)->where('p.number_of_hours <=', 10);
+                $builder->where('p.number_of_tokens >=', 1)->where('p.number_of_tokens <=', 10);
             } elseif ($range === '10-50') {
-                $builder->where('p.number_of_hours >', 10)->where('p.number_of_hours <=', 50);
+                $builder->where('p.number_of_tokens >', 10)->where('p.number_of_tokens <=', 50);
             } elseif ($range === '50-100') {
-                $builder->where('p.number_of_hours >', 50)->where('p.number_of_hours <=', 100);
+                $builder->where('p.number_of_tokens >', 50)->where('p.number_of_tokens <=', 100);
             } elseif ($range === '100-500') {
-                $builder->where('p.number_of_hours >', 100)->where('p.number_of_hours <=', 500);
+                $builder->where('p.number_of_tokens >', 100)->where('p.number_of_tokens <=', 500);
             } elseif ($range === '500+') {
-                $builder->where('p.number_of_hours >', 500);
+                $builder->where('p.number_of_tokens >', 500);
             }
             // Legacy support for old ranges
             elseif ($range === '0-50') {
-                $builder->where('p.number_of_hours >=', 0)->where('p.number_of_hours <=', 50);
+                $builder->where('p.number_of_tokens >=', 0)->where('p.number_of_tokens <=', 50);
             } elseif ($range === '100+') {
-                $builder->where('p.number_of_hours >', 100);
+                $builder->where('p.number_of_tokens >', 100);
             }
         }
         
@@ -145,7 +145,7 @@ class SubscriptionModel extends Model
      */
     public function createPlan($data)
     {
-        return $this->insert($data);
+        return $this->insert($this->normalizePlanPayload($data));
     }
 
     /**
@@ -155,7 +155,7 @@ class SubscriptionModel extends Model
     {
         // Skip model validation since we validate in the controller
         $this->skipValidation(true);
-        return $this->update($planId, $data);
+        return $this->update($planId, $this->normalizePlanPayload($data));
     }
 
     /**
@@ -221,6 +221,24 @@ class SubscriptionModel extends Model
         $this->applyFilters($builder, $filters);
 
         return $builder->get()->getResultArray();
+    }
+
+    /**
+     * Normalize incoming plan payloads to the current schema.
+     */
+    private function normalizePlanPayload(array $data): array
+    {
+        if (array_key_exists('number_of_hours', $data) && !array_key_exists('number_of_tokens', $data)) {
+            $data['number_of_tokens'] = $data['number_of_hours'];
+        }
+
+        if (array_key_exists('tokens', $data) && !array_key_exists('number_of_tokens', $data)) {
+            $data['number_of_tokens'] = $data['tokens'];
+        }
+
+        unset($data['number_of_hours'], $data['tokens']);
+
+        return $data;
     }
 }
 

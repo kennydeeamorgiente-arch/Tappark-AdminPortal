@@ -136,19 +136,19 @@
             </div>
             
             <!-- ============================
-                 HOURS RANGE (Subscriptions)
+                 TOKENS RANGE (Subscriptions)
                  ============================ -->
             <div class="filter-field filter-hours-range" style="display: none;">
                 <label class="form-label">
-                    <i class="fas fa-clock me-1"></i>Hours Range
+                    <i class="fas fa-coins me-1"></i>Tokens Range
                 </label>
                 <select class="form-select" id="sharedFilterHoursRange">
-                    <option value="">All Hours</option>
-                    <option value="1-10">1 - 10 hours</option>
-                    <option value="10-50">10 - 50 hours</option>
-                    <option value="50-100">50 - 100 hours</option>
-                    <option value="100-500">100 - 500 hours</option>
-                    <option value="500+">500+ hours</option>
+                    <option value="">All Tokens</option>
+                    <option value="1-10">1 - 10 tokens</option>
+                    <option value="10-50">10 - 50 tokens</option>
+                    <option value="50-100">50 - 100 tokens</option>
+                    <option value="100-500">100 - 500 tokens</option>
+                    <option value="500+">500+ tokens</option>
                 </select>
             </div>
             

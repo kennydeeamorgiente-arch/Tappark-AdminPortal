@@ -133,7 +133,7 @@
                         <td>#${startIdx + index}</td>
                         <td><strong>${escapeHtml(plan.plan_name || '-')}</strong></td>
                         <td><span class="badge bg-success">₱${formatCurrency(parseFloat(plan.cost || 0))}</span></td>
-                        <td><span class="badge bg-info">${plan.number_of_hours || 0} hrs</span></td>
+                        <td><span class="badge bg-info">${plan.number_of_tokens || 0} tokens</span></td>
                         <td>
                             <span class="badge bg-primary">${plan.total_subscribers || 0} total</span>
                             <span class="badge bg-success ms-1">${plan.active_subscribers || 0} active</span>
@@ -371,7 +371,7 @@
 
             // Hours range filter
             if (hoursRange) {
-                const hours = parseInt(plan.number_of_hours || 0);
+                const hours = parseInt(plan.number_of_tokens || 0);
                 if (hoursRange === '1-10' && (hours < 1 || hours > 10)) return false;
                 if (hoursRange === '10-50' && (hours < 10 || hours > 50)) return false;
                 if (hoursRange === '50-100' && (hours < 50 || hours > 100)) return false;
@@ -485,7 +485,7 @@
                 const bValue = $(b).find('td').eq($th.index()).text().trim();
 
                 // Handle numeric sorting
-                if (column === 'plan_id' || column === 'cost' || column === 'hours' || column === 'subscribers') {
+                if (column === 'plan_id' || column === 'cost' || column === 'tokens' || column === 'subscribers') {
                     // Clean numeric values (remove currency symbols, text, etc.)
                     const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0;
                     const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0;
@@ -530,7 +530,7 @@
             // No longer updating the ID column as it's sequential
             row.find('td:eq(1)').html(`<strong>${escapeHtml(planData.plan_name || '-')}</strong>`);
             row.find('td:eq(2)').html(`<span class="badge bg-success">₱${formatCurrency(parseFloat(planData.cost || 0))}</span>`);
-            row.find('td:eq(3)').html(`<span class="badge bg-info">${planData.number_of_hours || 0} hrs</span>`);
+            row.find('td:eq(3)').html(`<span class="badge bg-info">${planData.number_of_tokens || 0} tokens</span>`);
             row.find('td:eq(4)').html(`
                 <span class="badge bg-primary">${planData.total_subscribers || 0} total</span>
                 <span class="badge bg-success ms-1">${planData.active_subscribers || 0} active</span>
@@ -705,17 +705,17 @@
         $('.view-content').hide();
         $('.view-subscriptions').show();
 
-        // Calculate cost per hour
+        // Calculate cost per token
         const cost = parseFloat(plan.cost || 0);
-        const hours = parseFloat(plan.number_of_hours || 0);
-        const costPerHour = hours > 0 ? (cost / hours) : 0;
+        const tokens = parseFloat(plan.number_of_tokens || 0);
+        const costPerToken = tokens > 0 ? (cost / tokens) : 0;
 
         // Update fields
         $('#viewPlanIdBadge').text('Plan ID: ' + (plan.plan_id || '-'));
         $('#viewPlanName').text(plan.plan_name || '-');
         $('#viewPlanPrice').text('₱' + formatCurrency(cost));
-        $('#viewPlanHours').text((hours || 0));
-        $('#viewPlanCostPerHour').text('₱' + formatCurrency(costPerHour));
+        $('#viewPlanHours').text((tokens || 0) + ' tokens');
+        $('#viewPlanCostPerHour').text('₱' + formatCurrency(costPerToken));
         $('#viewPlanSubscribers').text(plan.total_subscribers || 0);
         $('#viewPlanActive').text(plan.active_subscribers || 0);
         $('#viewPlanDescription').text(plan.description || 'No description provided');
@@ -799,7 +799,7 @@
         // Fill form
         $('#planName').val(planData.plan_name || '');
         $('#planCost').val(planData.cost || 0);
-        $('#planHours').val(planData.number_of_hours || 0);
+        $('#planTokens').val(planData.number_of_tokens || 0);
         $('#planDescription').val(planData.description || '');
 
         // Show modal
@@ -953,7 +953,7 @@
         const formData = {
             plan_name: $('#planName').val().trim(),
             cost: $('#planCost').val(),
-            number_of_hours: $('#planHours').val(),
+            number_of_tokens: $('#planTokens').val(),
             description: $('#planDescription').val().trim()
         };
 
@@ -974,8 +974,8 @@
             hasErrors = true;
         }
 
-        if (!formData.number_of_hours || parseInt(formData.number_of_hours) < 1) {
-            errors.number_of_hours = 'Hours must be at least 1';
+        if (!formData.number_of_tokens || parseInt(formData.number_of_tokens) < 1) {
+            errors.number_of_tokens = 'Tokens must be at least 1';
             hasErrors = true;
         }
 
@@ -1016,12 +1016,12 @@
                 <div class="col-md-6">₱${formatCurrency(parseFloat(formData.cost || 0))}</div>
             </div>
             <div class="row">
-                <div class="col-md-6"><strong>Hours Included:</strong></div>
-                <div class="col-md-6">${formData.number_of_hours || 0} hrs</div>
+                <div class="col-md-6"><strong>Tokens Included:</strong></div>
+                <div class="col-md-6">${formData.number_of_tokens || 0} tokens</div>
             </div>
             <div class="row">
-                <div class="col-md-6"><strong>Cost per Hour:</strong></div>
-                <div class="col-md-6">₱${formatCurrency(parseFloat(formData.cost || 0) / parseFloat(formData.number_of_hours || 1))}/hr</div>
+                <div class="col-md-6"><strong>Cost per Token:</strong></div>
+                <div class="col-md-6">₱${formatCurrency(parseFloat(formData.cost || 0) / parseFloat(formData.number_of_tokens || 1))}/token</div>
             </div>
             ${formData.description ? `<div class="row"><div class="col-md-6"><strong>Description:</strong></div><div class="col-md-6">${escapeHtml(formData.description.substring(0, 50))}${formData.description.length > 50 ? '...' : ''}</div></div>` : ''}
         `;

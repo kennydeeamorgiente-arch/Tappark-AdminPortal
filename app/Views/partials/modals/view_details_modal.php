@@ -164,11 +164,11 @@
                                                 <div class="h3 fw-bold text-maroon mb-0" id="viewPlanPrice">-</div>
                                             </div>
                                             <div class="col-4 border-start border-end">
-                                                <small class="text-muted d-block">Included Hours</small>
+                                                <small class="text-muted d-block">Included Tokens</small>
                                                 <div class="h3 fw-bold text-dark mb-0" id="viewPlanHours">-</div>
                                             </div>
                                             <div class="col-4">
-                                                <small class="text-muted d-block">Cost/Hour</small>
+                                                <small class="text-muted d-block">Cost/Token</small>
                                                 <div class="h3 fw-bold text-muted mb-0" id="viewPlanCostPerHour">-</div>
                                             </div>
                                         </div>

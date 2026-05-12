@@ -87,12 +87,13 @@
                              ============================ -->
                         <div class="entity-fields fields-attendants" style="display: none;">
                             <div class="mb-3">
-                                <label class="form-label">Input Administrator <span class="text-danger">*</span></label>
+                                <label class="form-label" id="attendantIdentifierLabel">Input Administrator <span class="text-danger">*</span></label>
                                 <div class="employee-name-autocomplete position-relative">
                                     <input type="text" class="form-control" name="employee_search" id="attendantEmployeeSearch" placeholder="Type to search employees" autocomplete="off">
                                     <div class="list-group employee-suggestion-list d-none" id="attendantEmployeeSuggestions"></div>
                                 </div>
-                                <small class="text-muted d-block">The employee is suggested from the name, ID, or email, and can still be adjusted if needed.</small>
+                                <small class="text-muted d-block" id="attendantIdentifierHelp">The employee is suggested from the name, ID, or email, and can still be adjusted if needed.</small>
+                                <div class="invalid-feedback" id="error-plate_number"></div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -114,10 +115,13 @@
                             <input type="hidden" name="password" id="attendantPassword">
                             <div class="mb-3">
                                 <label class="form-label">Role <span class="text-danger">*</span></label>
-                                <select class="form-select" name="user_type_id" id="attendantUserTypeId">
-                                    <option value="">Select Role</option>
-                                    <!-- Will be populated dynamically -->
-                                </select>
+                                <div id="attendantUserTypeIdContainer">
+                                    <select class="form-select" name="user_type_id" id="attendantUserTypeId">
+                                        <option value="">Select Role</option>
+                                        <!-- Will be populated dynamically -->
+                                    </select>
+                                </div>
+                                <input type="text" class="form-control bg-light d-none mt-2" id="attendantUserTypeStaticDisplay" value="Guest" readonly>
                                 <div class="invalid-feedback" id="error-user_type_id"></div>
                             </div>
                             <div class="mb-3">
@@ -154,9 +158,9 @@
                                     <div class="invalid-feedback" id="error-cost"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Hours Included <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="number_of_hours" id="planHours" min="1" required>
-                                    <div class="invalid-feedback" id="error-number_of_hours"></div>
+                                    <label class="form-label">Tokens Included <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="number_of_tokens" id="planTokens" min="1" required>
+                                    <div class="invalid-feedback" id="error-number_of_tokens"></div>
                                 </div>
                             </div>
                             <div class="mb-3">

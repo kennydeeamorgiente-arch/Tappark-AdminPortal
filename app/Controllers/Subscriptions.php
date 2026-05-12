@@ -105,7 +105,7 @@ class Subscriptions extends BaseController
         $data = [
             'plan_name' => $this->request->getPost('plan_name'),
             'cost' => $this->request->getPost('cost'),
-            'number_of_hours' => $this->request->getPost('number_of_hours'),
+            'number_of_tokens' => $this->request->getPost('number_of_tokens') ?? $this->request->getPost('number_of_hours'),
             'description' => $this->request->getPost('description') ?? ''
         ];
 
@@ -113,7 +113,7 @@ class Subscriptions extends BaseController
         if (!$this->validate([
             'plan_name' => 'required|min_length[3]|max_length[120]|is_unique[plans.plan_name]',
             'cost' => 'required|numeric|greater_than_equal_to[0]|less_than[1000000]',
-            'number_of_hours' => 'required|integer|greater_than[0]|less_than[10000]'
+            'number_of_tokens' => 'required|integer|greater_than[0]|less_than[10000]'
         ])) {
             return $this->response->setJSON([
                 'success' => false,
@@ -163,7 +163,7 @@ class Subscriptions extends BaseController
         $data = [
             'plan_name' => $this->request->getPost('plan_name'),
             'cost' => $this->request->getPost('cost'),
-            'number_of_hours' => $this->request->getPost('number_of_hours'),
+            'number_of_tokens' => $this->request->getPost('number_of_tokens') ?? $this->request->getPost('number_of_hours'),
             'description' => $this->request->getPost('description') ?? ''
         ];
 
@@ -171,7 +171,7 @@ class Subscriptions extends BaseController
         if (!$this->validate([
             'plan_name' => "required|min_length[3]|max_length[120]|is_unique[plans.plan_name,plan_id,{$planId}]",
             'cost' => 'required|numeric|greater_than_equal_to[0]|less_than[1000000]',
-            'number_of_hours' => 'required|integer|greater_than[0]|less_than[10000]'
+            'number_of_tokens' => 'required|integer|greater_than[0]|less_than[10000]'
         ])) {
             return $this->response->setJSON([
                 'success' => false,
@@ -277,7 +277,7 @@ class Subscriptions extends BaseController
             'Plan ID',
             'Plan Name',
             'Cost (₱)',
-            'Hours Included',
+            'Tokens Included',
             'Total Subscribers',
             'Active Subscribers',
             'Description'
@@ -289,7 +289,7 @@ class Subscriptions extends BaseController
                 $plan['plan_id'],
                 $plan['plan_name'],
                 number_format($plan['cost'], 2),
-                $plan['number_of_hours'],
+                $plan['number_of_tokens'],
                 $plan['total_subscribers'] ?? 0,
                 $plan['active_subscribers'] ?? 0,
                 $plan['description'] ?? ''
