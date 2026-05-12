@@ -29,17 +29,21 @@
                         </div>
                     </div>
                     
-                    <!-- Grid Size Controls -->
-                    <div class="grid-size-section" style="margin-bottom: 20px; padding: 15px; background: #ffffff; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
-                        <h4 style="margin: 0 0 12px 0; color: #495057; font-size: 14px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-expand-arrows-alt"></i> Grid Size</h4>
-                        <div class="grid-size-controls" style="display: flex; gap: 10px;">
+                    <!-- Edit Tools -->
+                    <div class="grid-size-section edit-tools-panel" style="margin-bottom: 20px; padding: 15px; background: #ffffff; border-radius: 10px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                        <h4 style="margin: 0 0 12px 0; color: #495057; font-size: 14px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-pen-ruler"></i> Edit Tools</h4>
+                        <div class="grid-size-controls edit-tool-grid" style="display: flex; gap: 10px;">
                             <button id="decreaseGrid" class="grid-size-btn" onclick="expandGrid('both-decrease')" title="Decrease Grid Size (Rows & Columns)" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; flex: 1;">
                                 <i class="fas fa-minus"></i>
-                                <span>Decrease</span>
+                                <span>Grid</span>
                             </button>
                             <button id="increaseGrid" class="grid-size-btn" onclick="expandGrid('both-increase')" title="Increase Grid Size (Rows & Columns)" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; flex: 1;">
                                 <i class="fas fa-plus"></i>
-                                <span>Increase</span>
+                                <span>Grid</span>
+                            </button>
+                            <button class="element-btn clear erase-tool" data-type="clear" onclick="selectElement('clear')" title="Erase one cell or element from the layout">
+                                <i class="fas fa-eraser"></i>
+                                <span>Erase</span>
                             </button>
                         </div>
                         <div class="rotation-controls" id="elementRotationControls" style="display: none; margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 10px; border: 1px solid #dee2e6;">
@@ -55,11 +59,25 @@
                             <div id="rotationStatus" class="rotation-status" style="margin-top: 8px; font-size: 12px; color: #495057; font-weight: 600; letter-spacing: 0.3px;">Horizontal</div>
                         </div>
                     </div>
-                    
+
+                    <!-- Selected Section Actions -->
+                    <div id="sectionEditControls" class="selected-section-panel" style="display: none;">
+                        <h5><i class="fas fa-pen"></i> Selected Section</h5>
+                        <div id="selectedSectionInfo"></div>
+                        <div class="selected-section-actions">
+                            <button type="button" class="selected-section-delete" onclick="deleteSelectedSectionForEdit()">
+                                <i class="fas fa-trash"></i> Remove Section
+                            </button>
+                            <button type="button" class="selected-section-cancel" onclick="cancelSectionEdit()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                     
                     <!-- Layout Elements -->
                     <div class="tools-section">
                         <h4><i class="fas fa-road"></i> Road Elements</h4>
-                        <div class="element-buttons">
+                        <div class="element-buttons" id="roadElementButtons">
                             <button class="element-btn road" data-type="road" onclick="selectElement('road')" style="background: linear-gradient(135deg, #7b1fa2, #512da8); color: white; border: none; padding: var(--element-button-padding); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: var(--element-button-gap); font-size: var(--element-button-font); min-height: calc(var(--grid-cell-size) * 1.3); justify-content: center;">
                                 <span class="element-icon">═</span>
                                 <span>Road</span>
@@ -102,11 +120,7 @@
                     <!-- Obstacle Elements -->
                     <div class="tools-section">
                         <h4><i class="fas fa-cube"></i> Obstacle Elements</h4>
-                        <div class="element-buttons">
-                            <button class="element-btn clear" data-type="clear" onclick="selectElement('clear')" style="background: linear-gradient(135deg, #616161, #424242); color: white; border: none; padding: var(--element-button-padding); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: var(--element-button-gap); font-size: var(--element-button-font); min-height: calc(var(--grid-cell-size) * 1.3); justify-content: center;">
-                                <span class="element-icon">✕</span>
-                                <span>Clear</span>
-                            </button>
+                        <div class="element-buttons" id="obstacleElementButtons">
                             <button class="element-btn wall" data-type="wall" onclick="selectElement('wall')" style="background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: var(--element-button-padding); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: var(--element-button-gap); font-size: var(--element-button-font); min-height: calc(var(--grid-cell-size) * 1.3); justify-content: center;">
                                 <span class="element-icon">▬</span>
                                 <span>Wall</span>
@@ -121,6 +135,7 @@
                             </button>
                         </div>
                     </div>
+
                     
                     <!-- Parking Sections -->
                     <div class="sections-section">
@@ -136,21 +151,6 @@
                                 <i class="fas fa-times"></i> Cancel Selection
                             </button>
                         </div>
-                        
-                        <!-- Section Edit Controls -->
-                        <div id="sectionEditControls" style="margin-top: 10px; display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #007bff;">
-                            <h5 style="margin: 0 0 10px 0; color: #007bff;"><i class="fas fa-pen"></i> Edit Section</h5>
-                            <div id="selectedSectionInfo" style="margin-bottom: 10px; font-size: 12px; color: #666;"></div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button onclick="deleteSelectedSectionForEdit()" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                                <button onclick="cancelSectionEdit()" style="background: #6c757d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                                    <i class="fas fa-times"></i> Cancel
-                                </button>
-                            </div>
-                        </div>
-                        
                     </div>
                     
                     <!-- Designer Stats -->
@@ -188,9 +188,9 @@
                 <!-- Right Panel - Layout Grid -->
                 <div class="parking-designer-main">
                     <div class="layout-header">
-                        <h4><i class="fas fa-map"></i> Parking Layout Grid (12×16)</h4>
+                        <h4 id="layoutGridTitle"><i class="fas fa-map"></i> Parking Layout Grid <span id="layoutGridSizeText">(12×16)</span></h4>
                         <div class="grid-controls">
-                            <button class="btn-secondary" onclick="clearGrid()" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <button class="btn-secondary layout-clear-all" onclick="clearGrid()" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;">
                                 <i class="fas fa-eraser"></i>
                                 Clear All
                             </button>

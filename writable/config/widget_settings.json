@@ -1,0 +1,160 @@
+{
+    "dashboard": {
+        "dashboard-stat-total-subscribers": {
+            "visible": true,
+            "order": 1,
+            "title": "Total SUBBS",
+            "subtitle": "Active: 58 | Inactive: 1",
+            "icon": "fas fa-users",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Users",
+            "exportVisible": true
+        },
+        "dashboard-stat-active-bookings": {
+            "visible": true,
+            "order": 2,
+            "title": "Active Bookings",
+            "subtitle": "Active",
+            "icon": "fas fa-calendar-check",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Bookings",
+            "exportVisible": true
+        },
+        "dashboard-stat-parking-spaces": {
+            "visible": true,
+            "order": 3,
+            "title": "Parking Spaces",
+            "subtitle": "Available",
+            "icon": "fas fa-parking",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Occupancy",
+            "exportVisible": true
+        },
+        "dashboard-stat-revenue": {
+            "visible": true,
+            "order": 4,
+            "title": "Revenue",
+            "subtitle": "Earnings",
+            "icon": "fas fa-coins",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Revenue",
+            "exportVisible": true
+        },
+        "dashboard-stat-occupancy": {
+            "visible": true,
+            "order": 5,
+            "title": "Occupancy",
+            "subtitle": "Rate",
+            "icon": "fas fa-chart-pie",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Occupancy",
+            "exportVisible": true
+        },
+        "dashboard-stat-online-staff": {
+            "visible": true,
+            "order": 6,
+            "title": "Online Staff",
+            "subtitle": "Online",
+            "icon": "fas fa-user-tie",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Users",
+            "exportVisible": true
+        },
+        "dashboard-chart-revenuechart": {
+            "visible": true,
+            "order": 7,
+            "title": "Revenue Trend",
+            "subtitle": "Money earned for the selected dates",
+            "icon": "fas fa-chart-line",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Revenue",
+            "exportVisible": true
+        },
+        "dashboard-chart-occupancychart": {
+            "visible": true,
+            "order": 8,
+            "title": "Parking Occupancy",
+            "subtitle": "",
+            "icon": "fas fa-chart-pie",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Occupancy",
+            "exportVisible": true
+        },
+        "dashboard-chart-bookingschart": {
+            "visible": true,
+            "order": 9,
+            "title": "Bookings Overview",
+            "subtitle": "Number of bookings for the selected dates",
+            "icon": "fas fa-calendar-check",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Bookings",
+            "exportVisible": true
+        },
+        "dashboard-chart-usergrowthchart": {
+            "visible": true,
+            "order": 10,
+            "title": "Subscriber Growth",
+            "subtitle": "Total subscriber growth over time",
+            "icon": "fas fa-users",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Users",
+            "exportVisible": true
+        },
+        "dashboard-chart-hourbalancechart": {
+            "visible": true,
+            "order": 11,
+            "title": "Token Balance Trends",
+            "subtitle": "Purchased tokens, used tokens, and tokens left",
+            "icon": "fas fa-coins",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Revenue",
+            "exportVisible": true
+        },
+        "dashboard-chart-avgratingchart": {
+            "visible": true,
+            "order": 12,
+            "title": "Average Rating Over Time",
+            "subtitle": "Average feedback rating for the selected dates",
+            "icon": "fas fa-star",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Feedback",
+            "exportVisible": true
+        },
+        "dashboard-chart-guestbookingstrendchart": {
+            "visible": true,
+            "order": 13,
+            "title": "Guest Bookings Summary",
+            "subtitle": "Guest bookings over time and by vehicle type",
+            "icon": "fas fa-user-clock guest-summary-title-icon",
+            "accent": "#8b1f2b",
+            "size": "medium",
+            "chartType": "",
+            "dataSource": "Guest bookings",
+            "exportVisible": true
+        }
+    }
+}

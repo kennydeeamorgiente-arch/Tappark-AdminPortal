@@ -392,6 +392,7 @@ function initDashboardCharts() {
     // Initialize charts
     initializeCharts();
     window.refreshExistingChartsTheme?.();
+    window.applyWidgetSettings?.('dashboard');
     
     // Enhance chart animations after a delay
     setTimeout(() => {
@@ -1008,7 +1009,8 @@ if (typeof window.initPageScripts === 'undefined') {
 
 // Global function to load dashboard with filter (AJAX)
 // Only updates the dashboard content, not the filter component
-function loadDashboardWithFilter(filter, startDate = null, endDate = null) {
+function loadDashboardWithFilter(filter, startDate = null, endDate = null, options = {}) {
+    window.dashboardAutoRefreshState = { filter, startDate, endDate };
     let url = BASE_URL + 'dashboard?filter=' + filter + '&filter_change=1';
     
     if (filter === 'custom' && startDate && endDate) {
@@ -1018,21 +1020,22 @@ function loadDashboardWithFilter(filter, startDate = null, endDate = null) {
         console.log('🔄 Loading dashboard with filter:', filter);
     }
     
-    // Show loading animation in dashboard content area only
-    $('#dashboardContent').html(`
-        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading...</span>
+    if (!options.silent) {
+        $('#dashboardContent').html(`
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="mb-2">Loading Dashboard...</h5>
+                    <p class="text-muted">Please wait while we update your data</p>
                 </div>
-                <h5 class="mb-2">Loading Dashboard...</h5>
-                <p class="text-muted">Please wait while we update your data</p>
             </div>
-        </div>
-    `);
+        `);
+    }
     
     // Load new data via AJAX
-    $.ajax({
+    return $.ajax({
         url: url,
         type: 'GET',
         timeout: 10000,
@@ -1076,6 +1079,7 @@ function loadDashboardWithFilter(filter, startDate = null, endDate = null) {
                 if (typeof window.stabilizeLayout === 'function') {
                     window.stabilizeLayout();
                 }
+                window.applyWidgetSettings?.('dashboard');
             }, 150);
             
             console.log('✅ Dashboard updated with filter:', filter || 'today');
@@ -1106,4 +1110,10 @@ function loadDashboardWithFilter(filter, startDate = null, endDate = null) {
         }
     });
 }
+
+window.refreshCurrentPage = function(options) {
+    if (!$('#dashboardContent').length) return;
+    const state = window.dashboardAutoRefreshState || { filter: 'today', startDate: null, endDate: null };
+    return loadDashboardWithFilter(state.filter || 'today', state.startDate || null, state.endDate || null, options || {});
+};
 

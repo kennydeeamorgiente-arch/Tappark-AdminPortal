@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="<?= base_url('assets/css/dashboard.css') ?>?v=<?= @filemtime(FCPATH . 'assets/css/dashboard.css') ?: time() ?>">
+<link rel="stylesheet" href="<?= base_url('assets/css/widget-settings.css') ?>?v=<?= @filemtime(FCPATH . 'assets/css/widget-settings.css') ?: time() ?>">
 
 <div class="container-fluid">
     <!-- Dashboard Header -->

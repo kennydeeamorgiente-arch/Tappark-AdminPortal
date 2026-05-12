@@ -23,6 +23,8 @@ $routes->post('profile/save-database-config', 'Profile::saveDatabaseConfig');
 $routes->get('dashboard', 'Dashboard::index');
 $routes->get('reports', 'Reports::index');
 $routes->get('reports/export', 'Reports::export');
+$routes->get('api/widget-settings/(:segment)', 'WidgetSettings::get/$1');
+$routes->post('api/widget-settings/(:segment)', 'WidgetSettings::save/$1');
 $routes->get('analytics', function() {
     return redirect()->to('/reports');
 });
@@ -120,6 +122,8 @@ $routes->get('api/parking/sections/(:num)', 'ParkingAreas::getOverviewSections/$
 $routes->get('api/parking/section-grid/(:num)', 'ParkingAreas::getSectionGrid/$1');
 $routes->get('api/parking/layout/(:num)/(:num)', 'ParkingAreas::getLayout/$1/$2');
 $routes->post('api/parking/save-layout', 'ParkingAreas::saveLayout');
+$routes->get('api/layout-custom-elements', 'LayoutCustomElements::index');
+$routes->post('api/layout-custom-elements', 'LayoutCustomElements::save');
 
 // Dynamic page loading route - handles all page navigation
 // IMPORTANT: These routes must be LAST to catch all page routes

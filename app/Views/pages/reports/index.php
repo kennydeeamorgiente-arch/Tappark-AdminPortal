@@ -1,6 +1,7 @@
 <div class="container-fluid">
     <!-- Load Reports CSS -->
     <link rel="stylesheet" href="<?= base_url('assets/css/reports.css') ?>?v=<?= @filemtime(FCPATH . 'assets/css/reports.css') ?: time() ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/widget-settings.css') ?>?v=<?= @filemtime(FCPATH . 'assets/css/widget-settings.css') ?: time() ?>">
     
     <!-- Enhanced Reports Header -->
     <div class="card mb-3 border-0 shadow-sm">

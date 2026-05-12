@@ -156,6 +156,78 @@
     transform: translateY(-2px) !important;
 }
 
+#parkingLayoutDesignerModal .custom-elements-panel .custom-element-form {
+    display: grid !important;
+    gap: 8px !important;
+}
+
+#parkingLayoutDesignerModal .custom-elements-panel input,
+#parkingLayoutDesignerModal .custom-elements-panel select,
+#parkingLayoutDesignerModal .custom-elements-panel textarea {
+    width: 100% !important;
+    font-size: 0.78rem !important;
+    border: 1px solid #dfe4ea !important;
+    border-radius: 7px !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-add-btn {
+    min-height: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    border: 1px solid rgba(128, 0, 0, 0.28) !important;
+    border-radius: 8px !important;
+    background: #800000 !important;
+    color: #ffffff !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-btn.custom-road,
+#parkingLayoutDesignerModal .custom-element-btn.custom-road[style] {
+    background: linear-gradient(135deg, #4a4a4a, #303030) !important;
+    color: #ffffff !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-btn.custom-obstacle,
+#parkingLayoutDesignerModal .custom-element-btn.custom-obstacle[style] {
+    background: linear-gradient(135deg, #6c757d, #495057) !important;
+    color: #ffffff !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-list {
+    display: grid !important;
+    gap: 6px !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-list-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 6px 8px !important;
+    border: 1px solid #e4e8ee !important;
+    border-radius: 7px !important;
+    background: #f8fafc !important;
+    font-size: 0.75rem !important;
+    color: #384653 !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-list-item button {
+    width: 24px !important;
+    height: 24px !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    background: #f1e7e7 !important;
+    color: #800000 !important;
+}
+
+#parkingLayoutDesignerModal .custom-element-empty {
+    font-size: 0.74rem !important;
+    color: #7a848f !important;
+}
+
 /* Section spacing to prevent overlap */
 #parkingLayoutDesignerModal .section-btn {
     margin-bottom: 10px !important;
@@ -264,41 +336,526 @@
 }
 
 #parkingLayoutDesignerModal .placed-indicator {
-    color: white !important;
-    font-weight: bold !important;
-    margin-left: 5px !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin-left: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 18px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    color: #800000 !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+}
+
+/* Cleaner compact section picker */
+#parkingLayoutDesignerModal .sections-section {
+    padding: 14px !important;
+}
+
+#parkingLayoutDesignerModal #sectionsContainer {
+    max-height: 235px !important;
+    overflow-y: auto !important;
+    padding-right: 6px !important;
+}
+
+#parkingLayoutDesignerModal .section-btn {
+    min-height: 78px !important;
+    display: grid !important;
+    grid-template-columns: 54px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 9px !important;
+    width: 100% !important;
+    margin: 0 0 8px !important;
+    padding: 9px 28px 9px 9px !important;
+    border: 1px solid #e3e7ec !important;
+    border-left: 4px solid #c8d0d8 !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    color: #2f3a45 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    transform: none !important;
+    text-align: left !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#parkingLayoutDesignerModal .section-btn:hover {
+    border-color: #d7b7b7 !important;
+    border-left-color: #800000 !important;
+    background: #fffafa !important;
+    box-shadow: 0 4px 12px rgba(128, 0, 0, 0.08) !important;
+    transform: none !important;
+}
+
+#parkingLayoutDesignerModal .section-btn.active {
+    border-color: rgba(128, 0, 0, 0.35) !important;
+    border-left-color: #800000 !important;
+    background: #fff7f7 !important;
+    color: #2f3a45 !important;
+    box-shadow: 0 0 0 2px rgba(128, 0, 0, 0.12) !important;
+    transform: none !important;
+}
+
+#parkingLayoutDesignerModal .section-btn.placed {
+    border-color: #d9dee4 !important;
+    border-left-color: #6c757d !important;
+    background: #f5f6f8 !important;
+    color: #3d454d !important;
+    cursor: not-allowed !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+#parkingLayoutDesignerModal .section-btn.placed:hover {
+    border-color: #d9dee4 !important;
+    border-left-color: #6c757d !important;
+    background: #f5f6f8 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+#parkingLayoutDesignerModal .section-btn .section-preview {
+    width: 50px !important;
+    height: 40px !important;
+    border: 1px solid #dfe4ea !important;
+    border-radius: 6px !important;
+    background: #f8fafc !important;
+    overflow: hidden !important;
+}
+
+#parkingLayoutDesignerModal .section-btn .preview-grid {
+    gap: 1px !important;
+    padding: 3px !important;
+}
+
+#parkingLayoutDesignerModal .section-btn .preview-cell {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    border-radius: 2px !important;
+    background: #9aa7b5 !important;
+    box-shadow: none !important;
+}
+
+#parkingLayoutDesignerModal .section-info {
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+}
+
+#parkingLayoutDesignerModal .section-title-row,
+#parkingLayoutDesignerModal .section-meta-row,
+#parkingLayoutDesignerModal .section-size-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+#parkingLayoutDesignerModal .section-title-row {
+    justify-content: flex-start !important;
+}
+
+#parkingLayoutDesignerModal .section-name {
+    color: #2f3a45 !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+#parkingLayoutDesignerModal .section-size {
+    color: #6b7580 !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+#parkingLayoutDesignerModal .section-vehicle-pill,
+#parkingLayoutDesignerModal .section-mode-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    border-radius: 999px !important;
+    padding: 3px 7px !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+#parkingLayoutDesignerModal .section-vehicle-pill {
+    background: #f1e7e7 !important;
+    color: #800000 !important;
+    text-transform: capitalize !important;
+    flex: 0 1 auto !important;
+}
+
+#parkingLayoutDesignerModal .section-vehicle-pill span {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+#parkingLayoutDesignerModal .section-mode-badge {
+    background: #fff4d6 !important;
+    color: #876000 !important;
+    flex: 0 0 auto !important;
+    max-width: 58px !important;
+    font-size: 0.62rem !important;
+}
+
+#parkingLayoutDesignerModal .section-btn.active .section-vehicle-pill {
+    background: #800000 !important;
+    color: #ffffff !important;
+}
+
+#parkingLayoutDesignerModal .section-btn.placed .section-vehicle-pill,
+#parkingLayoutDesignerModal .section-btn.placed .section-mode-badge {
+    background: #e7eaee !important;
+    color: #5f6872 !important;
+}
+
+#parkingLayoutDesignerModal .section-btn.placed .placed-indicator {
+    background: #6c757d !important;
+    color: #ffffff !important;
+}
+
+#parkingLayoutDesignerModal .section-btn .placed-indicator {
+    position: absolute !important;
+    top: 8px !important;
+    right: 7px !important;
+    margin-left: 0 !important;
+}
+
+#parkingLayoutDesignerModal .edit-tools-panel,
+#parkingLayoutDesignerModal .grid-size-section.edit-tools-panel[style] {
+    padding: 14px !important;
+    background: #ffffff !important;
+    border-color: #e5dada !important;
+}
+
+#parkingLayoutDesignerModal .edit-tool-grid,
+#parkingLayoutDesignerModal .grid-size-controls.edit-tool-grid[style] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+
+#parkingLayoutDesignerModal .edit-tool-grid .grid-size-btn,
+#parkingLayoutDesignerModal .edit-tool-grid .grid-size-btn[style] {
+    min-height: 38px !important;
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    font-size: 0.74rem !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+#parkingLayoutDesignerModal .edit-tool-grid #decreaseGrid,
+#parkingLayoutDesignerModal .edit-tool-grid #decreaseGrid[style] {
+    background: #f8f0f0 !important;
+    color: #800000 !important;
+    border: 1px solid rgba(128, 0, 0, 0.22) !important;
+}
+
+#parkingLayoutDesignerModal .edit-tool-grid #increaseGrid,
+#parkingLayoutDesignerModal .edit-tool-grid #increaseGrid[style] {
+    background: #eff8f2 !important;
+    color: #197044 !important;
+    border: 1px solid rgba(25, 112, 68, 0.22) !important;
+}
+
+#parkingLayoutDesignerModal .erase-tool,
+#parkingLayoutDesignerModal .erase-tool[style] {
+    min-height: 38px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 8px 6px !important;
+    border: 1px solid rgba(128, 0, 0, 0.28) !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    color: #800000 !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+}
+
+#parkingLayoutDesignerModal .erase-tool:hover,
+#parkingLayoutDesignerModal .erase-tool.active {
+    background: #800000 !important;
+    color: #ffffff !important;
+    border-color: #800000 !important;
+    transform: none !important;
+}
+
+#parkingLayoutDesignerModal .layout-clear-all,
+#parkingLayoutDesignerModal .layout-clear-all[style] {
+    background: #ffffff !important;
+    color: #800000 !important;
+    border: 1px solid rgba(128, 0, 0, 0.35) !important;
+    box-shadow: none !important;
+}
+
+#parkingLayoutDesignerModal .layout-clear-all:hover {
+    background: #fff4f4 !important;
+    color: #660000 !important;
+}
+
+#parkingLayoutDesignerModal .layout-header {
+    gap: 12px !important;
+}
+
+#parkingLayoutDesignerModal .layout-header h4 {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+#parkingLayoutDesignerModal #layoutGridSizeText {
+    flex: 0 0 auto !important;
+    color: #6b7580 !important;
+    font-weight: 700 !important;
+}
+
+#parkingLayoutDesignerModal .rotation-controls,
+#parkingLayoutDesignerModal #elementRotationControls[style] {
+    margin-top: 10px !important;
+    padding: 10px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8ef !important;
+    border-radius: 8px !important;
+}
+
+#parkingLayoutDesignerModal .rotation-controls h5 {
+    font-size: 0.78rem !important;
+    margin-bottom: 8px !important;
+    color: #384653 !important;
+}
+
+#parkingLayoutDesignerModal .rotation-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px !important;
+}
+
+#parkingLayoutDesignerModal .rotation-btn,
+#parkingLayoutDesignerModal .rotation-btn[style] {
+    background: #ffffff !important;
+    color: #800000 !important;
+    border: 1px solid rgba(128, 0, 0, 0.25) !important;
+    padding: 7px 8px !important;
+    border-radius: 7px !important;
+    font-size: 0.72rem !important;
+}
+
+#parkingLayoutDesignerModal .designer-stats-section,
+#parkingLayoutDesignerModal .designer-stats-section[style] {
+    background: #ffffff !important;
+    border: 1px solid #e4e8ee !important;
+}
+
+#parkingLayoutDesignerModal .designer-stats-section h4,
+#parkingLayoutDesignerModal .designer-stats-section h4[style] {
+    color: #384653 !important;
+}
+
+#parkingLayoutDesignerModal .designer-stats-section .badge {
+    background: #f1e7e7 !important;
+    color: #800000 !important;
+}
+
+#parkingLayoutDesignerModal .designer-stat-item,
+#parkingLayoutDesignerModal .designer-stat-item[style] {
+    background: #f8fafc !important;
+    border: 1px solid #e4e8ee !important;
+}
+
+#parkingLayoutDesignerModal #designerStatSections,
+#parkingLayoutDesignerModal #designerStatSpots {
+    color: #800000 !important;
+}
+
+#parkingLayoutDesignerModal .designer-stats-section > div:last-child,
+#parkingLayoutDesignerModal .designer-stats-section > div:last-child[style] {
+    color: #687380 !important;
+    font-style: normal !important;
+}
+
+#parkingLayoutDesignerModal #sectionControls,
+#parkingLayoutDesignerModal #sectionControls[style] {
+    margin-top: 8px !important;
+}
+
+#parkingLayoutDesignerModal #sectionControls button,
+#parkingLayoutDesignerModal #sectionControls button[style] {
+    width: 100% !important;
+    min-height: 38px !important;
+    background: #ffffff !important;
+    color: #800000 !important;
+    border: 1px solid rgba(128, 0, 0, 0.28) !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-panel,
+#parkingLayoutDesignerModal #sectionEditControls {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+    margin: 0 0 12px !important;
+    padding: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(128, 0, 0, 0.28) !important;
+    border-left: 4px solid #800000 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 20px rgba(36, 45, 54, 0.12) !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-panel h5,
+#parkingLayoutDesignerModal #sectionEditControls h5 {
+    margin: 0 0 8px !important;
+    color: #800000 !important;
+    font-size: 0.9rem !important;
+    font-weight: 800 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+}
+
+#parkingLayoutDesignerModal #selectedSectionInfo {
+    display: grid !important;
+    gap: 3px !important;
+    margin-bottom: 10px !important;
+    color: #4d5863 !important;
+    font-size: 0.76rem !important;
+    line-height: 1.35 !important;
+}
+
+#parkingLayoutDesignerModal #selectedSectionInfo span {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+#parkingLayoutDesignerModal #selectedSectionInfo strong {
+    color: #2f3a45 !important;
+    margin-right: 4px !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-actions button {
+    min-height: 36px !important;
+    border-radius: 7px !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    border: 1px solid transparent !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-delete {
+    background: #800000 !important;
+    color: #ffffff !important;
+    border-color: #800000 !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-cancel {
+    background: #ffffff !important;
+    color: #4f5b66 !important;
+    border-color: #9aa7b5 !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-delete:hover,
+#parkingLayoutDesignerModal .selected-section-delete:focus {
+    background: #660000 !important;
+    border-color: #660000 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 12px rgba(128, 0, 0, 0.22) !important;
+}
+
+#parkingLayoutDesignerModal .selected-section-cancel:hover,
+#parkingLayoutDesignerModal .selected-section-cancel:focus {
+    background: #f1f4f7 !important;
+    border-color: #687480 !important;
+    color: #2f3a45 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 12px rgba(47, 58, 69, 0.12) !important;
 }
 
 /* Section selection for editing */
 #parkingLayoutDesignerModal .grid-cell.section-selected {
-    background: #007bff !important;
-    border: 3px solid #0056b3 !important;
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5) !important;
-    animation: sectionPulse 1s infinite !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: inset 0 0 0 2px #3f4b57, 0 0 0 2px rgba(63, 75, 87, 0.16) !important;
+    animation: none !important;
     z-index: 10 !important;
     position: relative !important;
+    outline: none !important;
 }
 
 /* Ensure section cells maintain their styling when selected */
 #parkingLayoutDesignerModal .grid-cell.section.section-selected {
-    background: #007bff !important;
-    border: 3px solid #0056b3 !important;
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: inset 0 0 0 2px #3f4b57, 0 0 0 2px rgba(63, 75, 87, 0.16) !important;
     z-index: 10 !important;
     position: relative !important;
+    outline: none !important;
 }
 
 @keyframes sectionPulse {
     0% {
-        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        box-shadow: inset 0 0 0 2px #3f4b57, 0 0 0 2px rgba(63, 75, 87, 0.16);
     }
 
     50% {
-        box-shadow: 0 0 20px rgba(0, 123, 255, 0.8);
+        box-shadow: inset 0 0 0 2px #3f4b57, 0 0 0 3px rgba(63, 75, 87, 0.2);
     }
 
     100% {
-        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        box-shadow: inset 0 0 0 2px #3f4b57, 0 0 0 2px rgba(63, 75, 87, 0.16);
     }
 }
 
@@ -320,10 +877,11 @@
 
 /* Rotation preview styling */
 #parkingLayoutDesignerModal .grid-cell.section-preview {
-    background: #ffe0e0 !important;
-    border: 2px solid #800000 !important;
-    box-shadow: 0 0 8px rgba(128, 0, 0, 0.4) !important;
-    opacity: 0.8 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    outline: none !important;
 }
 
 /* Rotation classes for visual rotation - More specific selectors */
@@ -967,7 +1525,7 @@ body.layout-designer-modal-open .modal.show {
     overflow-x: auto !important;
     overflow-y: auto !important;
     scrollbar-width: thin !important;
-    scrollbar-color: #007bff #f1f1f1 !important;
+    scrollbar-color: #800000 #f1f4f7 !important;
 }
 
 /* Custom scrollbar styling for webkit browsers */
@@ -982,12 +1540,12 @@ body.layout-designer-modal-open .modal.show {
 }
 
 .layout-grid::-webkit-scrollbar-thumb {
-    background: #007bff !important;
+    background: #800000 !important;
     border-radius: 6px !important;
 }
 
 .layout-grid::-webkit-scrollbar-thumb:hover {
-    background: #0056b3 !important;
+    background: #660000 !important;
 }
 
 .grid-expand-controls {
@@ -1002,7 +1560,7 @@ body.layout-designer-modal-open .modal.show {
 
 .expand-btn {
     position: absolute !important;
-    background: #007bff !important;
+    background: #800000 !important;
     color: white !important;
     border: none !important;
     border-radius: 50% !important;
@@ -1018,7 +1576,7 @@ body.layout-designer-modal-open .modal.show {
 }
 
 .expand-btn:hover {
-    background: #0056b3 !important;
+    background: #660000 !important;
     transform: scale(1.1) !important;
 }
 
@@ -1102,6 +1660,7 @@ body.layout-designer-modal-open .modal.show {
 .grid-cell.oneway,
 .grid-cell.two-way,
 .grid-cell.entry-exit,
+.grid-cell[class*="custom-"],
 .grid-cell.wall,
 .grid-cell.pillar,
 .grid-cell.tree {
@@ -1124,7 +1683,8 @@ body.layout-designer-modal-open .modal.show {
 .grid-cell.exit,
 .grid-cell.oneway,
 .grid-cell.two-way,
-.grid-cell.entry-exit {
+.grid-cell.entry-exit,
+.grid-cell[class*="custom-"] {
     background: #4a4a4a !important;
 }
 
@@ -1414,4 +1974,185 @@ body.layout-designer-modal-open .modal.show {
 
 [data-bs-theme="dark"] #parkingLayoutDesignerModal .layout-grid::-webkit-scrollbar-thumb:hover {
     background: #aa3a3a !important;
+}
+
+/* Final layout designer header and scroll fixes */
+#parkingLayoutDesignerModal .parking-designer-main .layout-header {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+    align-items: center !important;
+    padding: 12px 16px !important;
+    overflow: hidden !important;
+}
+
+#parkingLayoutDesignerModal .parking-designer-main .layout-header h4,
+#parkingLayoutDesignerModal .parking-designer-main #layoutGridTitle {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    font-size: 0.98rem !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    color: #2c3e50 !important;
+}
+
+#parkingLayoutDesignerModal .parking-designer-main #layoutGridTitle i {
+    flex: 0 0 auto !important;
+}
+
+#parkingLayoutDesignerModal .parking-designer-main #layoutGridSizeText {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    color: #6b7580 !important;
+}
+
+#parkingLayoutDesignerModal .parking-designer-main .grid-controls {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+}
+
+#parkingLayoutDesignerModal .parking-designer-main .grid-controls button,
+#parkingLayoutDesignerModal .parking-designer-main .grid-controls button[style] {
+    width: 96px !important;
+    min-width: 86px !important;
+    min-height: 38px !important;
+    justify-content: center !important;
+    margin-left: 0 !important;
+    padding: 7px 9px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+}
+
+#parkingLayoutDesignerModal .grid-container,
+#parkingLayoutDesignerModal .layout-grid {
+    outline: none !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #9aa7b5 #f1f4f7 !important;
+}
+
+#parkingLayoutDesignerModal .grid-container:focus,
+#parkingLayoutDesignerModal .grid-container:focus-visible,
+#parkingLayoutDesignerModal .layout-grid:focus,
+#parkingLayoutDesignerModal .layout-grid:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+#parkingLayoutDesignerModal .grid-container::-webkit-scrollbar,
+#parkingLayoutDesignerModal .layout-grid::-webkit-scrollbar {
+    width: 10px !important;
+    height: 10px !important;
+}
+
+#parkingLayoutDesignerModal .grid-container::-webkit-scrollbar-track,
+#parkingLayoutDesignerModal .layout-grid::-webkit-scrollbar-track {
+    background: #f1f4f7 !important;
+    border-radius: 8px !important;
+}
+
+#parkingLayoutDesignerModal .grid-container::-webkit-scrollbar-thumb,
+#parkingLayoutDesignerModal .layout-grid::-webkit-scrollbar-thumb {
+    background: #9aa7b5 !important;
+    border-radius: 8px !important;
+    border: 2px solid #f1f4f7 !important;
+}
+
+#parkingLayoutDesignerModal .grid-container::-webkit-scrollbar-thumb:hover,
+#parkingLayoutDesignerModal .layout-grid::-webkit-scrollbar-thumb:hover {
+    background: #800000 !important;
+}
+
+/* Designer nested message/confirm modal consistency */
+#designerMessageModal .modal-dialog {
+    max-width: 460px !important;
+}
+
+#designerMessageModal .modal-content {
+    border: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.26) !important;
+}
+
+#designerMessageModal .modal-header {
+    min-height: 58px !important;
+    padding: 1rem 1.25rem !important;
+    justify-content: flex-start !important;
+    background: linear-gradient(135deg, #800000 0%, #990000 100%) !important;
+    border: 0 !important;
+}
+
+#designerMessageModal .modal-title {
+    color: #ffffff !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    text-align: left !important;
+    line-height: 1.2 !important;
+}
+
+#designerMessageModal .modal-body {
+    min-height: 118px !important;
+    padding: 1.5rem 1.75rem !important;
+    color: #3d454d !important;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+}
+
+#designerMessageModal .modal-footer {
+    padding: 0 1.75rem 1.5rem !important;
+    gap: 0.75rem !important;
+}
+
+#designerMessageModal .designer-modal-cancel,
+#designerMessageModal .designer-modal-confirm {
+    min-width: 88px !important;
+    min-height: 38px !important;
+    border-radius: 7px !important;
+    font-weight: 700 !important;
+}
+
+#designerMessageModal .designer-modal-confirm {
+    background: #800000 !important;
+    border-color: #800000 !important;
+    color: #ffffff !important;
+}
+
+#designerMessageModal .designer-modal-confirm:hover {
+    background: #660000 !important;
+    border-color: #660000 !important;
+}
+
+#designerMessageModal .designer-modal-cancel {
+    background: #ffffff !important;
+    border-color: #9aa7b5 !important;
+    color: #4f5b66 !important;
+}
+
+[data-bs-theme="dark"] #designerMessageModal .modal-content {
+    background: #251b1b !important;
+    color: #ead8d8 !important;
+}
+
+[data-bs-theme="dark"] #designerMessageModal .modal-body {
+    color: #e6d1d1 !important;
+}
+
+[data-bs-theme="dark"] #designerMessageModal .designer-modal-cancel {
+    background: #2f2424 !important;
+    border-color: rgba(217, 171, 171, 0.35) !important;
+    color: #ead8d8 !important;
 }

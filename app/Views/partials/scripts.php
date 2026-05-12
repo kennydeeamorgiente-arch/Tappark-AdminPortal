@@ -110,6 +110,12 @@ if (typeof bootstrap === 'undefined') {
 <!-- Reports.js (load globally so it's available for AJAX-loaded reports content) -->
 <script src="<?= base_url('assets/js/reports.js') ?>"></script>
 
+<!-- Widget settings for dashboard and reports -->
+<script src="<?= base_url('assets/js/widget-settings.js') ?>?v=<?= @filemtime(FCPATH . 'assets/js/widget-settings.js') ?: time() ?>"></script>
+
+<!-- System layout custom element settings -->
+<script src="<?= base_url('assets/js/system-layout-elements.js') ?>?v=<?= @filemtime(FCPATH . 'assets/js/system-layout-elements.js') ?: time() ?>"></script>
+
 <!-- Logs.js (load globally so it's available for AJAX-loaded logs content) -->
 <script src="<?= base_url('assets/js/logs.js') ?>"></script>
 
@@ -987,6 +993,9 @@ if (typeof bootstrap === 'undefined') {
                     'X-Requested-With': 'XMLHttpRequest'  // Tell CI4 this is AJAX request
                 },
                 success: function(html) {
+                    // Let the newly loaded page register its own quiet refresh hook.
+                    window.refreshCurrentPage = null;
+
                     // Clear old page data before loading new content
                     // This prevents conflicts when navigating between pages
                     if (typeof window.dashboardData !== 'undefined') {
@@ -1087,6 +1096,70 @@ if (typeof bootstrap === 'undefined') {
         
         // Make loadPage available globally (for use in other scripts)
         window.loadPage = loadPage;
+
+        // ====================================
+        // GUARDED REALTIME PAGE REFRESH
+        // ====================================
+        (function setupTapparkAutoRefresh() {
+            if (window.tapparkAutoRefresh?.initialized) {
+                return;
+            }
+
+            const autoRefresh = {
+                initialized: true,
+                intervalMs: 30000,
+                timer: null,
+                running: false,
+                lastRunAt: 0,
+                start() {
+                    this.stop();
+                    this.timer = window.setInterval(() => this.tick(), this.intervalMs);
+                },
+                stop() {
+                    if (this.timer) {
+                        window.clearInterval(this.timer);
+                        this.timer = null;
+                    }
+                },
+                shouldSkip() {
+                    const active = document.activeElement;
+                    const activeTag = active ? active.tagName : '';
+                    const isEditing = active && (
+                        active.isContentEditable ||
+                        ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag)
+                    );
+                    const hasOpenModal = document.querySelector('.modal.show, .parking-modal-overlay[style*="display: block"]');
+                    const layoutDesignerOpen = document.body.classList.contains('layout-designer-modal-open');
+
+                    return document.hidden ||
+                        this.running ||
+                        isEditing ||
+                        hasOpenModal ||
+                        layoutDesignerOpen ||
+                        (typeof $ !== 'undefined' && $.active > 0);
+                },
+                tick() {
+                    if (this.shouldSkip() || typeof window.refreshCurrentPage !== 'function') {
+                        return;
+                    }
+
+                    this.running = true;
+                    this.lastRunAt = Date.now();
+
+                    Promise.resolve(window.refreshCurrentPage({
+                        silent: true,
+                        source: 'auto-refresh'
+                    })).catch(function(error) {
+                        console.warn('Auto refresh skipped after error:', error);
+                    }).finally(() => {
+                        this.running = false;
+                    });
+                }
+            };
+
+            window.tapparkAutoRefresh = autoRefresh;
+            autoRefresh.start();
+        })();
         
         // ====================================
         // MENU CLICK HANDLERS

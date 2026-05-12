@@ -130,9 +130,19 @@ transform: none !important;
 }
 
 #parkingLayoutDesignerModal .placed-indicator {
-color: white !important;
-font-weight: bold !important;
-margin-left: 5px !important;
+width: 18px !important;
+height: 18px !important;
+margin-left: 8px !important;
+display: inline-flex !important;
+align-items: center !important;
+justify-content: center !important;
+flex: 0 0 18px !important;
+border-radius: 50% !important;
+background: #ffffff !important;
+color: #800000 !important;
+font-size: 10px !important;
+line-height: 1 !important;
+vertical-align: middle !important;
 }
 
 /* Section selection for editing */

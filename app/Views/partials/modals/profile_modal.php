@@ -1,4 +1,5 @@
 <!-- Profile & Settings Modal -->
+<link rel="stylesheet" href="<?= base_url('assets/css/widget-settings.css') ?>?v=<?= @filemtime(FCPATH . 'assets/css/widget-settings.css') ?: time() ?>">
 <div class="modal fade" id="profileModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -364,6 +365,98 @@
                             <?= form_close() ?>
                         </div>
 
+                        <!-- Layout and Widget System Settings -->
+                        <div class="mb-4">
+                            <h6 class="mb-3 fw-semibold d-flex align-items-center">
+                                <i class="fas fa-layer-group me-2" style="color: var(--tappark-maroon);"></i>Layout & Widget System
+                            </h6>
+
+                            <div class="card border-0 shadow-sm mb-3 settings-card system-config-card">
+                                <div class="card-body p-4">
+                                    <div class="system-config-header">
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">Parking Layout Designer Elements</h6>
+                                            <small class="text-muted">System-level custom road and obstacle elements shown inside the layout designer.</small>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-maroon btn-sm system-expand-btn" id="addSystemLayoutElementBtn" aria-expanded="false">
+                                            <span>Add Element</span>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div id="systemLayoutElementForm" class="system-element-form d-none">
+                                        <input type="hidden" id="systemCustomElementEditingId" value="">
+                                        <div>
+                                            <label class="form-label small">Element Name</label>
+                                            <input type="text" id="systemCustomElementName" class="form-control form-control-sm" placeholder="Element name" maxlength="32">
+                                        </div>
+                                        <div>
+                                            <label class="form-label small">Category</label>
+                                            <select id="systemCustomElementCategory" class="form-select form-select-sm">
+                                                <option value="road">Road Element</option>
+                                                <option value="obstacle">Obstacle Element</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small">Icon Type</label>
+                                            <select id="systemCustomElementIconType" class="form-select form-select-sm">
+                                                <option value="fa">Font Awesome class</option>
+                                                <option value="text">Emoji/text</option>
+                                                <option value="svg">Pasted SVG</option>
+                                                <option value="image">Image URL or uploaded image</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small">Placement Mode</label>
+                                            <select id="systemCustomElementPlacementMode" class="form-select form-select-sm">
+                                                <option value="single">Single cell</option>
+                                                <option value="fill-horizontal">Fill 3 cells horizontally</option>
+                                                <option value="fill-vertical">Fill 3 cells vertically</option>
+                                            </select>
+                                        </div>
+                                        <div class="system-element-form-full">
+                                            <label class="form-label small">Icon / Content</label>
+                                            <textarea id="systemCustomElementIconValue" class="form-control form-control-sm" rows="2" placeholder="fa-solid fa-bolt, emoji/text, SVG, or image URL"></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small">Upload Image</label>
+                                            <input type="file" id="systemCustomElementImageUpload" class="form-control form-control-sm" accept="image/*">
+                                        </div>
+                                        <div class="system-element-save-cell">
+                                            <label class="form-label small">&nbsp;</label>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-maroon btn-sm" id="saveSystemLayoutElementBtn">
+                                                    <i class="fas fa-save me-1"></i><span>Save Element</span>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="cancelSystemLayoutElementEditBtn">
+                                                    Cancel Edit
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="systemLayoutElementList" class="system-layout-element-list mt-3"></div>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 shadow-sm settings-card system-config-card">
+                                <div class="card-body p-4">
+                                    <div class="system-config-header">
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold">Dashboard & Reports Widget Settings</h6>
+                                            <small class="text-muted">Configure widget visibility, order, titles, icons, colors, sizes, chart types, and approved data sources.</small>
+                                        </div>
+                                        <div class="system-widget-actions">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openWidgetSettings('dashboard')">
+                                                <i class="fas fa-gauge me-1"></i>Dashboard Widgets
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openWidgetSettings('reports')">
+                                                <i class="fas fa-chart-line me-1"></i>Reports Widgets
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- System Maintenance -->
                         <div class="mb-0">
                             <h6 class="mb-3 fw-semibold d-flex align-items-center">
@@ -630,6 +723,153 @@
     margin-bottom: 0.75rem;
 }
 
+#profileModal .system-config-card {
+    border-radius: 10px;
+}
+
+#profileModal .system-config-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#profileModal .system-expand-btn {
+    min-width: 116px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #800000;
+    border-color: rgba(128, 0, 0, 0.35);
+    font-weight: 700;
+}
+
+#profileModal .system-expand-btn:hover {
+    background: #800000;
+    color: #ffffff;
+    border-color: #800000;
+}
+
+#profileModal .system-element-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #edf0f3;
+    border-radius: 9px;
+    background: #fbfcfd;
+}
+
+#profileModal .system-element-form.d-none {
+    display: none !important;
+}
+
+#profileModal .system-element-form-full {
+    grid-column: 1 / -1;
+}
+
+#profileModal .system-element-save-cell {
+    display: grid;
+}
+
+#profileModal .system-element-save-cell .btn {
+    min-height: 33px;
+}
+
+#profileModal .system-widget-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+#profileModal .system-layout-element-list {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    max-height: 360px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.35rem;
+    scrollbar-width: thin;
+    scrollbar-color: #9aa7b5 #f1f4f7;
+}
+
+#profileModal .system-layout-element-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#profileModal .system-layout-element-list::-webkit-scrollbar-track {
+    background: #f1f4f7;
+    border-radius: 8px;
+}
+
+#profileModal .system-layout-element-list::-webkit-scrollbar-thumb {
+    background: #9aa7b5;
+    border-radius: 8px;
+}
+
+#profileModal .system-layout-element-list::-webkit-scrollbar-thumb:hover {
+    background: #800000;
+}
+
+#profileModal .system-layout-element-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #e4e8ee;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+#profileModal .system-layout-element-item h6 {
+    font-size: 0.86rem;
+}
+
+#profileModal .system-layout-element-meta {
+    color: #6c757d;
+    font-size: 0.74rem;
+}
+
+#profileModal .system-layout-element-actions {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+[data-bs-theme="dark"] #profileModal .system-layout-element-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme="dark"] #profileModal .system-layout-element-list {
+    scrollbar-color: #8f6f76 #211919;
+}
+
+[data-bs-theme="dark"] #profileModal .system-layout-element-list::-webkit-scrollbar-track {
+    background: #211919;
+}
+
+[data-bs-theme="dark"] #profileModal .system-layout-element-list::-webkit-scrollbar-thumb {
+    background: #8f6f76;
+}
+
+[data-bs-theme="dark"] #profileModal .system-config-header {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme="dark"] #profileModal .system-element-form {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
 /* Responsive adjustments for profile modal */
 @media (max-width: 768px) {
     #profileModal .settings-card .card-body {
@@ -644,6 +884,28 @@
     #profileModal .settings-switch .form-check-input {
         width: 2.5rem;
         height: 1.25rem;
+    }
+
+    #profileModal .system-config-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #profileModal .system-expand-btn,
+    #profileModal .system-widget-actions .btn {
+        width: 100%;
+    }
+
+    #profileModal .system-element-form {
+        grid-template-columns: 1fr;
+    }
+
+    #profileModal .system-layout-element-item {
+        grid-template-columns: 1fr;
+    }
+
+    #profileModal .system-layout-element-actions {
+        justify-content: flex-start;
     }
     
     #profileModal .profile-avatar-large {

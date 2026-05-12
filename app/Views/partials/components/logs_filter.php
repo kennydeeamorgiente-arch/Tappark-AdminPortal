@@ -165,14 +165,15 @@ $(document).ready(function() {
     }
     
     // Load logs with filters
-    window.loadLogsWithFilter = function(page = 1) {
+    window.loadLogsWithFilter = function(page = 1, options = {}) {
         const params = buildLogsFilterParams();
         const url = BASE_URL + 'logs/api?page=' + page + (params ? '&' + params : '');
         
-        // Show loading
-        $('#logsTableBody').html('<tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
+        if (!options.silent) {
+            $('#logsTableBody').html('<tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
+        }
         
-        $.ajax({
+        return $.ajax({
             url: url,
             type: 'GET',
             dataType: 'json',
@@ -204,6 +205,11 @@ $(document).ready(function() {
                 $('#logsTableBody').html('<tr><td colspan="6" class="text-center py-4"><p class="text-danger">Error loading data. Please try again.</p></td></tr>');
             }
         });
+    };
+
+    window.refreshCurrentPage = function(options) {
+        const activePage = parseInt($('#logsPaginationContainer .page-item.active .page-link').data('page'), 10) || 1;
+        return window.loadLogsWithFilter(activePage, options || {});
     };
 });
 

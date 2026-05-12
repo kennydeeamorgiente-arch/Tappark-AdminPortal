@@ -147,11 +147,13 @@ if (typeof window.initPageScripts === 'function') {
             }
 
             // Load all parking areas
-            function loadAreas() {
-                $.ajax({
+            function loadAreas(options) {
+                options = options || {};
+                return $.ajax({
                     url: `${baseUrl}parking/areas/list`,
                     method: 'GET',
                     beforeSend: function () {
+                        if (options.silent) return;
                         $('#areasGrid').html(`
                             <div class="col-12 text-center py-5">
                                 <div class="spinner-border text-primary" role="status">
@@ -1048,6 +1050,10 @@ if (typeof window.initPageScripts === 'function') {
                     }
                 });
             }
+
+            window.refreshCurrentPage = function(options) {
+                return loadAreas(options);
+            };
 
             function populateWizardVehicleTypes() {
                 let options = '<option value="">Select Vehicle Type</option>';
