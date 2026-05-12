@@ -110,6 +110,12 @@ if (typeof bootstrap === 'undefined') {
 <!-- Reports.js (load globally so it's available for AJAX-loaded reports content) -->
 <script src="<?= base_url('assets/js/reports.js') ?>"></script>
 
+<!-- Widget settings for dashboard and reports -->
+<script src="<?= base_url('assets/js/widget-settings.js') ?>?v=<?= @filemtime(FCPATH . 'assets/js/widget-settings.js') ?: time() ?>"></script>
+
+<!-- System layout custom element settings -->
+<script src="<?= base_url('assets/js/system-layout-elements.js') ?>?v=<?= @filemtime(FCPATH . 'assets/js/system-layout-elements.js') ?: time() ?>"></script>
+
 <!-- Logs.js (load globally so it's available for AJAX-loaded logs content) -->
 <script src="<?= base_url('assets/js/logs.js') ?>"></script>
 

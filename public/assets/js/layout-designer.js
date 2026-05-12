@@ -38,6 +38,155 @@ if (typeof window.directionLabels === 'undefined') {
     };
 }
 
+const CUSTOM_ELEMENT_PREFIX = 'custom-';
+if (typeof window.customLayoutElements === 'undefined') {
+    window.customLayoutElements = {};
+}
+if (typeof window.hiddenLayoutElements === 'undefined') {
+    window.hiddenLayoutElements = [];
+}
+
+function escapeSvgText(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function sanitizeCustomElementName(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ').substring(0, 32);
+}
+
+function makeCustomElementId(name) {
+    const base = sanitizeCustomElementName(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'element';
+    return `${CUSTOM_ELEMENT_PREFIX}${base}-${Date.now().toString(36)}`;
+}
+
+function isCustomElementType(type) {
+    return typeof type === 'string' && type.indexOf(CUSTOM_ELEMENT_PREFIX) === 0;
+}
+
+function getCustomElementConfig(typeOrElement) {
+    if (!typeOrElement) return null;
+    if (typeof typeOrElement === 'object' && typeOrElement.id) return typeOrElement;
+    return window.customLayoutElements[typeOrElement] || null;
+}
+
+function getCustomElementIconMarkup(element) {
+    const value = String(element?.iconValue || '').trim();
+    const type = element?.iconType || 'text';
+    if (!value) {
+        return `<text x="25" y="30" text-anchor="middle" font-family="Arial" font-size="16" font-weight="700" fill="currentColor">${escapeSvgText((element?.name || '?').charAt(0))}</text>`;
+    }
+    if (type === 'fa') {
+        const label = value.replace(/^fa[srbl]?\s+/, '').replace(/^fa-/, '').split(/\s+/)[0].replace(/-/g, ' ').trim();
+        return `<text x="25" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="800" fill="currentColor">${escapeSvgText(label.substring(0, 10))}</text>`;
+    }
+    if (type === 'svg' && /<svg[\s>]/i.test(value)) {
+        const safeSvg = value
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/\son\w+="[^"]*"/gi, '')
+            .replace(/\son\w+='[^']*'/gi, '');
+        return `<foreignObject x="12" y="12" width="26" height="26"><div xmlns="http://www.w3.org/1999/xhtml" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;overflow:hidden;">${safeSvg}</div></foreignObject>`;
+    }
+    if (type === 'image' && (/^https?:\/\//i.test(value) || /^data:image\//i.test(value))) {
+        return `<clipPath id="customIconClip"><rect x="12" y="12" width="26" height="26" rx="4"/></clipPath>
+            <image href="${escapeSvgText(value)}" x="12" y="12" width="26" height="26" preserveAspectRatio="xMidYMid meet" clip-path="url(#customIconClip)"/>`;
+    }
+    return `<text x="25" y="30" text-anchor="middle" font-family="Segoe UI Emoji, Segoe UI Symbol, Arial, sans-serif" font-size="15" font-weight="800" fill="currentColor">${escapeSvgText(value.substring(0, 6))}</text>`;
+}
+
+function shouldShowCustomElementContent(placementMeta = null) {
+    if (!placementMeta || !placementMeta.placementCount || placementMeta.placementCount <= 1) {
+        return true;
+    }
+    return Number(placementMeta.placementIndex) === Math.floor(Number(placementMeta.placementCount) / 2);
+}
+
+function customRoadElementSVG(element, direction = 'horizontal', placementMeta = null) {
+    const rotate = direction === 'vertical' || direction === 'up' || direction === 'down' ? 'rotate(90 25 25)' : '';
+    const showContent = shouldShowCustomElementContent(placementMeta);
+    return `<svg viewBox="0 0 50 50" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="display:block;">
+        <rect x="0" y="0" width="51" height="51" fill="#4a4a4a"/>
+        <g transform="${rotate}">
+            <line x1="0" y1="25" x2="50" y2="25" stroke="#ffd54f" stroke-width="2.5" stroke-dasharray="4,4"/>
+        </g>
+        ${showContent ? `<circle cx="25" cy="25" r="15" fill="rgba(0,0,0,0.28)"/><g color="#ffffff">${getCustomElementIconMarkup(element)}</g>` : ''}
+    </svg>`;
+}
+
+function customObstacleElementSVG(element, placementMeta = null) {
+    const showContent = shouldShowCustomElementContent(placementMeta);
+    return `<svg viewBox="0 0 50 50" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="display:block;">
+        <rect x="0" y="0" width="51" height="51" fill="#4a4a4a"/>
+        <rect x="6" y="6" width="38" height="38" rx="4" fill="#6c757d"/>
+        <rect x="9" y="9" width="32" height="32" rx="3" fill="#f8f9fa" opacity="0.9"/>
+        ${showContent ? `<g color="#495057">${getCustomElementIconMarkup(element)}</g>` : ''}
+    </svg>`;
+}
+
+function getCustomElementSVG(type, direction = 'horizontal', elementConfig = null, placementMeta = null) {
+    const element = elementConfig || getCustomElementConfig(type);
+    if (!element) return '';
+    return element.category === 'road'
+        ? customRoadElementSVG(element, direction, placementMeta)
+        : customObstacleElementSVG(element, placementMeta);
+}
+
+function customElementApiUrl() {
+    return `${window.APP_BASE_URL || '/'}api/layout-custom-elements`;
+}
+
+function customElementCsrfHeaders() {
+    const token = typeof window.getCSRFToken === 'function' ? window.getCSRFToken() : '';
+    return token ? { 'X-CSRF-TOKEN': token } : {};
+}
+
+async function loadSystemCustomElements() {
+    try {
+        const response = await fetch(customElementApiUrl(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (result?.success && result.elements && typeof result.elements === 'object') {
+            window.customLayoutElements = {
+                ...(window.customLayoutElements || {}),
+                ...result.elements
+            };
+        }
+        if (result?.success && Array.isArray(result.hidden_elements)) {
+            window.hiddenLayoutElements = result.hidden_elements;
+        }
+        renderCustomElementButtons();
+        applyHiddenLayoutElements();
+    } catch (error) {
+        console.warn('Unable to load system custom layout elements:', error);
+    }
+}
+
+async function saveSystemCustomElements() {
+    try {
+        await fetch(customElementApiUrl(), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                ...customElementCsrfHeaders()
+            },
+            body: JSON.stringify({
+                elements: window.customLayoutElements || {},
+                hidden_elements: window.hiddenLayoutElements || []
+            })
+        });
+    } catch (error) {
+        console.warn('Unable to save system custom layout elements:', error);
+    }
+}
+
 // Function to detect if vehicle type should be capacity-only
 function shouldBeCapacityOnly(vehicleType, sectionMode) {
     // IMPORTANT: Always respect the section_mode from database
@@ -409,6 +558,10 @@ function treeSVG() {
 
 // Function to get SVG content for any element type
 function getElementSVG(elementType, direction = 'right', sectionType = null, slotNumber = null, sectionName = null) {
+    if (isCustomElementType(elementType)) {
+        return getCustomElementSVG(elementType, direction, null, sectionType);
+    }
+
     switch (elementType) {
         case 'road':
             // Static road design - no generator
@@ -718,7 +871,10 @@ function generateCompleteSVG() {
             const x = col * TILE_SIZE;
             const y = row * TILE_SIZE;
 
-            const elementSvg = getElementSVG(element.type, element.direction);
+            if (element.customElement) {
+                window.customLayoutElements[element.type] = element.customElement;
+            }
+            const elementSvg = getElementSVG(element.type, element.direction, element);
             if (elementSvg) {
                 // Extract inner content from SVG (remove outer SVG tags)
                 // Use a tighter regex to ensure we don't accidentally leave trailing tags
@@ -1795,16 +1951,21 @@ function selectElement(type) {
         floorLabel.style.fontWeight = '';
     }
 
+    if ((window.hiddenLayoutElements || []).includes(type)) {
+        showError('This element is hidden in System settings.', 'Element Hidden');
+        return;
+    }
+
     // Toggle active state - if already selected, deselect
     const button = document.querySelector(`[data-type="${type}"]`);
-    const isCurrentlyActive = button.classList.contains('active');
+    const isCurrentlyActive = button ? button.classList.contains('active') : false;
 
     // Remove active from all element buttons
     document.querySelectorAll('.element-btn').forEach(btn => btn.classList.remove('active'));
 
     if (!isCurrentlyActive) {
         // Select element
-        button.classList.add('active');
+        if (button) button.classList.add('active');
         selectedElement = type;
         const storedDirection = elementOrientationState[type];
         if (storedDirection) {
@@ -1860,6 +2021,10 @@ function prepareRotationControls(elementType) {
 }
 
 function getDirectionOptionsForType(elementType) {
+    if (isCustomElementType(elementType)) {
+        const customElement = getCustomElementConfig(elementType);
+        return customElement?.category === 'road' ? ['horizontal', 'vertical'] : ['none'];
+    }
     return window.directionOptionsMap[elementType] ? [...window.directionOptionsMap[elementType]] : ['right'];
 }
 
@@ -1919,13 +2084,13 @@ function applyDirectionToCell(cell, direction) {
     const type = cell.dataset.elementType;
     if (!type) return;
     cell.dataset.elementDirection = direction;
-    const svgContent = getElementSVG(type, direction);
-    if (svgContent) {
-        cell.innerHTML = svgContent;
-    }
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
     const position = `${row},${col}`;
+    const svgContent = getElementSVG(type, direction, layoutData[position] || null);
+    if (svgContent) {
+        cell.innerHTML = svgContent;
+    }
     if (layoutData[position]) {
         layoutData[position].direction = direction;
     }
@@ -2060,6 +2225,8 @@ async function closeParkingLayoutDesigner() {
 
 // Initialize layout designer
 async function initLayoutDesigner() {
+    await loadSystemCustomElements();
+
     // Load areas first to populate the dropdowns
     await loadAreas();
 
@@ -2122,7 +2289,107 @@ function generateGrid() {
     // Update expand buttons
     updateExpandButtons();
     updateLayoutGridTitle();
+    renderCustomElementButtons();
 }
+
+function renderCustomElementButtons() {
+    const roadContainer = document.getElementById('roadElementButtons');
+    const obstacleContainer = document.getElementById('obstacleElementButtons');
+    const list = document.getElementById('customElementList');
+    if (!roadContainer || !obstacleContainer) return;
+
+    document.querySelectorAll('.custom-element-btn').forEach(btn => btn.remove());
+    applyHiddenLayoutElements();
+    Object.values(window.customLayoutElements || {}).forEach(element => {
+        if ((window.hiddenLayoutElements || []).includes(element.id)) {
+            return;
+        }
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `element-btn custom-element-btn ${element.category === 'road' ? 'custom-road' : 'custom-obstacle'}`;
+        button.dataset.type = element.id;
+        button.onclick = () => selectElement(element.id);
+        button.title = `${element.name} (${element.placementMode || 'single'})`;
+        button.innerHTML = `<span class="element-icon">${getCustomElementPaletteIcon(element)}</span><span>${escapeSvgText(element.name)}</span>`;
+        (element.category === 'road' ? roadContainer : obstacleContainer).appendChild(button);
+    });
+
+    if (list) {
+        const elements = Object.values(window.customLayoutElements || {});
+        list.innerHTML = elements.length
+            ? elements.map(element => `<div class="custom-element-list-item"><span>${escapeSvgText(element.name)}</span><button type="button" onclick="removeCustomElement('${element.id}')"><i class="fas fa-times"></i></button></div>`).join('')
+            : '<div class="custom-element-empty">No custom elements yet.</div>';
+    }
+}
+
+function applyHiddenLayoutElements() {
+    const hidden = new Set(window.hiddenLayoutElements || []);
+    document.querySelectorAll('#parkingLayoutDesignerModal .element-btn[data-type]').forEach(button => {
+        if (button.classList.contains('custom-element-btn')) {
+            return;
+        }
+        button.classList.toggle('d-none', hidden.has(button.dataset.type));
+    });
+}
+
+function getCustomElementPaletteIcon(element) {
+    const value = String(element?.iconValue || '').trim();
+    if (!value) return escapeSvgText((element?.name || '?').charAt(0));
+    if (element.iconType === 'fa') return `<i class="${escapeSvgText(value)}"></i>`;
+    if (element.iconType === 'svg') return '<i class="fas fa-vector-square"></i>';
+    if (element.iconType === 'image') return '<i class="fas fa-image"></i>';
+    return escapeSvgText(value.substring(0, 3));
+}
+
+function readCustomElementUpload(file) {
+    return new Promise(resolve => {
+        if (!file) {
+            resolve('');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+    });
+}
+
+async function addCustomElementFromForm() {
+    const name = sanitizeCustomElementName(document.getElementById('customElementName')?.value);
+    const category = document.getElementById('customElementCategory')?.value === 'obstacle' ? 'obstacle' : 'road';
+    const iconType = document.getElementById('customElementIconType')?.value || 'text';
+    const upload = document.getElementById('customElementImageUpload')?.files?.[0] || null;
+    const uploadedValue = iconType === 'image' ? await readCustomElementUpload(upload) : '';
+    const iconValue = (uploadedValue || String(document.getElementById('customElementIconValue')?.value || '').trim()).substring(0, 200000);
+    const placementMode = document.getElementById('customElementPlacementMode')?.value || 'single';
+
+    if (!name || !iconValue) {
+        showError('Custom elements need a name and icon/content.', 'Custom Element');
+        return;
+    }
+
+    const id = makeCustomElementId(name);
+    window.customLayoutElements[id] = { id, name, category, iconType, iconValue, placementMode };
+    document.getElementById('customElementName').value = '';
+    document.getElementById('customElementIconValue').value = '';
+    const uploadInput = document.getElementById('customElementImageUpload');
+    if (uploadInput) uploadInput.value = '';
+    renderCustomElementButtons();
+    saveSystemCustomElements();
+    window.layoutDesignerSaved = false;
+    updateSaveButtonAppearance();
+}
+
+function removeCustomElement(id) {
+    delete window.customLayoutElements[id];
+    renderCustomElementButtons();
+    saveSystemCustomElements();
+    window.layoutDesignerSaved = false;
+    updateSaveButtonAppearance();
+}
+
+window.addCustomElementFromForm = addCustomElementFromForm;
+window.removeCustomElement = removeCustomElement;
 
 function updateLayoutGridTitle() {
     const grid = document.getElementById('layout-grid');
@@ -2210,15 +2477,19 @@ function renderExistingContent() {
     // Re-render elements
     Object.keys(layoutData).forEach(position => {
         const [row, col] = position.split(',').map(Number);
-        const elementData = layoutData[position];
-        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            const elementData = layoutData[position];
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
 
         if (cell && elementData) {
             cell.classList.add(elementData.type);
             cell.dataset.elementType = elementData.type;
             cell.dataset.elementDirection = elementData.direction;
+            if (elementData.customElement) {
+                window.customLayoutElements[elementData.type] = elementData.customElement;
+                cell.dataset.customElement = JSON.stringify(elementData.customElement);
+            }
 
-            const svgContent = getElementSVG(elementData.type, elementData.direction);
+            const svgContent = getElementSVG(elementData.type, elementData.direction, elementData);
             if (svgContent) {
                 cell.innerHTML = svgContent;
             }
@@ -2233,7 +2504,17 @@ function renderExistingContent() {
 
 // Check if element type is an obstacle
 function isObstacle(type) {
+    if (isCustomElementType(type)) {
+        return getCustomElementConfig(type)?.category === 'obstacle';
+    }
     return ['wall', 'pillar', 'tree', 'gate'].includes(type);
+}
+
+function isRoadElement(type) {
+    if (isCustomElementType(type)) {
+        return getCustomElementConfig(type)?.category === 'road';
+    }
+    return ['road', 'l-road', 't-road', 'intersection', 'entrance', 'exit', 'oneway', 'two-way', 'entry-exit'].includes(type);
 }
 
 // Check if placement would cause collision with obstacles
@@ -2250,7 +2531,7 @@ function wouldOverlapObstacles(selectedType, targetRow, targetCol) {
     if (selectedIsObstacle && existingIsObstacle) return true;
 
     // Roads cannot overlap walls/pillars
-    if (['road', 'intersection', 'entrance', 'exit', 'oneway', 'two-way', 'entry-exit'].includes(selectedType) &&
+    if (isRoadElement(selectedType) &&
         ['wall', 'pillar'].includes(existingType)) return true;
 
     // Walls/pillars cannot overlap roads
@@ -2258,6 +2539,18 @@ function wouldOverlapObstacles(selectedType, targetRow, targetCol) {
         ['road', 'intersection', 'entrance', 'exit', 'oneway', 'two-way', 'entry-exit'].includes(existingType)) return true;
 
     return false;
+}
+
+function getPlacementCellsForElement(type, row, col) {
+    const customElement = getCustomElementConfig(type);
+    const mode = customElement?.placementMode || 'single';
+    if (mode === 'fill-horizontal') {
+        return [{ row, col }, { row, col: col + 1 }, { row, col: col + 2 }];
+    }
+    if (mode === 'fill-vertical') {
+        return [{ row, col }, { row: row + 1, col }, { row: row + 2, col }];
+    }
+    return [{ row, col }];
 }
 
 // Check if a target cell is occupied by any section or element
@@ -2372,6 +2665,7 @@ function removeElement(cell, row, col) {
     cell.className = 'grid-cell';
     delete cell.dataset.elementType;
     delete cell.dataset.elementDirection;
+    delete cell.dataset.customElement;
 
     // Remove from layout data
     const position = `${row},${col}`;
@@ -3472,6 +3766,7 @@ function handleCellMouseUp(cell, row, col, event) {
         const targetPos = `${row},${col}`;
         const elementType = dragStartCell.dataset.elementType;
         const elementDirection = dragStartCell.dataset.elementDirection || 'horizontal';
+        const originalElementData = layoutData[draggedElementPos] ? { ...layoutData[draggedElementPos] } : {};
 
         // Store cell dataset before clearing
         const cellDataset = { ...dragStartCell.dataset };
@@ -3487,18 +3782,20 @@ function handleCellMouseUp(cell, row, col, event) {
             cell.classList.add(elementType);
             cell.dataset.elementType = elementType;
             cell.dataset.elementDirection = elementDirection;
-            const svgContent = getElementSVG(elementType, elementDirection);
+            const movedElementData = {
+                ...originalElementData,
+                type: elementType,
+                element: elementType,
+                direction: elementDirection
+            };
+            const svgContent = getElementSVG(elementType, elementDirection, movedElementData);
             if (svgContent) {
                 cell.innerHTML = svgContent;
             }
 
             // Update layout data
             delete layoutData[draggedElementPos];
-            layoutData[targetPos] = {
-                type: elementType,
-                element: elementType,
-                direction: elementDirection
-            };
+            layoutData[targetPos] = movedElementData;
 
             // Mark as having unsaved changes
             window.layoutDesignerSaved = false;
@@ -3572,6 +3869,7 @@ function placeElement(cell, row, col) {
             cell.innerHTML = '';
             cell.removeAttribute('data-element-type');
             cell.removeAttribute('data-element-direction');
+            cell.removeAttribute('data-custom-element');
 
             // Remove from layout data
             const position = `${row},${col}`;
@@ -3583,6 +3881,61 @@ function placeElement(cell, row, col) {
         return;
     }
 
+    const placementCells = getPlacementCellsForElement(selectedElement, row, col);
+    if (placementCells.length > 1) {
+        const grid = document.getElementById('layout-grid');
+        const currentRows = parseInt(grid?.dataset.rows || '8', 10);
+        const currentCols = parseInt(grid?.dataset.cols || '8', 10);
+        for (const target of placementCells) {
+            const targetCell = document.querySelector(`[data-row="${target.row}"][data-col="${target.col}"]`);
+            if (!targetCell || target.row >= currentRows || target.col >= currentCols) {
+                showError('This custom element does not fit in the current grid position.', 'Element Placement');
+                return;
+            }
+            if (targetCell.dataset.section) {
+                showError('Cannot place custom element across a parking section.', 'Element Placement');
+                return;
+            }
+            if (wouldOverlapObstacles(selectedElement, target.row, target.col)) {
+                showError('Cannot place custom element across an existing obstacle or road conflict.', 'Element Placement');
+                return;
+            }
+        }
+
+        placementCells.forEach((target, index) => {
+            const targetCell = document.querySelector(`[data-row="${target.row}"][data-col="${target.col}"]`);
+            placeSingleElementCell(targetCell, target.row, target.col, selectedElement, selectedElementDirection, {
+                placementMode: getCustomElementConfig(selectedElement)?.placementMode || 'single',
+                placementIndex: index,
+                placementCount: placementCells.length
+            });
+        });
+        window.layoutDesignerSaved = false;
+        selectedCell = cell;
+        prepareRotationControls(selectedElement);
+        updateRotationStatus();
+        updateSaveButtonAppearance();
+        return;
+    }
+
+    placeSingleElementCell(cell, row, col, selectedElement, selectedElementDirection, {
+        placementMode: 'single',
+        placementIndex: 0,
+        placementCount: 1
+    });
+    window.layoutDesignerSaved = false;
+    selectedCell = cell;
+    prepareRotationControls(selectedElement);
+    updateRotationStatus();
+    updateSaveButtonAppearance();
+
+    console.log('Element placed:', selectedElement, 'at', row, col);
+    console.log('Layout data updated:', layoutData);
+}
+
+function placeSingleElementCell(cell, row, col, elementType, direction, placementMeta = null) {
+    if (!cell || cell.dataset.section) return;
+
     // Clear existing element content but preserve section data if present
     if (!cell.dataset.section) {
         cell.className = 'grid-cell';
@@ -3590,12 +3943,21 @@ function placeElement(cell, row, col) {
     }
 
     // Add element class and SVG content
-    cell.classList.add(selectedElement);
-    cell.dataset.elementType = selectedElement;
-    cell.dataset.elementDirection = selectedElementDirection;
+    cell.classList.add(elementType);
+    cell.dataset.elementType = elementType;
+    cell.dataset.elementDirection = direction;
 
     // Get SVG content for the element
-    const svgContent = getElementSVG(selectedElement, selectedElementDirection);
+    const customElement = getCustomElementConfig(elementType);
+    const elementRecord = {
+        type: elementType,
+        element: elementType,
+        direction: direction,
+        ...(placementMeta || {}),
+        ...(customElement ? { customElement: { ...customElement } } : {})
+    };
+
+    const svgContent = getElementSVG(elementType, direction, elementRecord);
 
     if (svgContent) {
         // If there's already content (like section labels), add SVG above it
@@ -3608,21 +3970,7 @@ function placeElement(cell, row, col) {
 
     // Store the element data
     const position = `${row},${col}`;
-    layoutData[position] = {
-        type: selectedElement,
-        element: selectedElement,
-        direction: selectedElementDirection
-    };
-
-    // Mark as having unsaved changes
-    window.layoutDesignerSaved = false;
-
-    selectedCell = cell;
-    prepareRotationControls(selectedElement);
-    updateRotationStatus();
-
-    // Update save button appearance
-    updateSaveButtonAppearance();
+    layoutData[position] = elementRecord;
 
     // Check if we need to expand grid for new content
     const grid = document.getElementById('layout-grid');
@@ -3636,8 +3984,6 @@ function placeElement(cell, row, col) {
         }
     }
 
-    console.log('Element placed:', selectedElement, 'at', row, col);
-    console.log('Layout data updated:', layoutData);
 }
 
 // Place section on grid
@@ -3874,7 +4220,7 @@ async function saveLayout() {
 
         // Optimize layout data to only include used area
         const optimizedData = optimizeLayoutData();
-        const { bounds, elements, sections } = optimizedData;
+        const { bounds, elements, sections, custom_elements } = optimizedData;
 
         // Generate complete SVG layout
         const svgData = generateCompleteSVG();
@@ -3896,6 +4242,7 @@ async function saveLayout() {
                     columns: colsForSave
                 },
                 elements: elements,
+                custom_elements: custom_elements || {},
                 sections: sections,
                 svg_data: svgData, // Add the complete SVG layout
                 metadata: {
@@ -4026,6 +4373,10 @@ async function loadExistingLayout() {
             }
 
             // Clear current layout and regenerate grid with new dimensions
+            window.customLayoutElements = {};
+            if (parsedLayoutData.custom_elements && typeof parsedLayoutData.custom_elements === 'object') {
+                window.customLayoutElements = { ...parsedLayoutData.custom_elements };
+            }
             generateGrid();
             placedSections.clear();
             selectedSection = null;
@@ -4080,6 +4431,10 @@ async function loadExistingLayout() {
                         // Store element data
                         cell.dataset.elementType = element.type;
                         cell.dataset.elementDirection = element.direction || '';
+                        if (element.customElement) {
+                            window.customLayoutElements[element.type] = element.customElement;
+                            cell.dataset.customElement = JSON.stringify(element.customElement);
+                        }
 
                         // Add element CSS classes
                         cell.classList.add(element.type);
@@ -4088,7 +4443,7 @@ async function loadExistingLayout() {
                         }
 
                         // Add SVG content for the element
-                        const svgContent = getElementSVG(element.type, element.direction);
+                        const svgContent = getElementSVG(element.type, element.direction, element);
                         if (svgContent) {
                             cell.innerHTML = svgContent;
                         }
@@ -4097,10 +4452,15 @@ async function loadExistingLayout() {
                         layoutData[position] = {
                             type: element.type,
                             element: element.type,
-                            direction: element.direction || 'horizontal'
+                            direction: element.direction || 'horizontal',
+                            placementMode: element.placementMode || element.customElement?.placementMode || 'single',
+                            placementIndex: element.placementIndex || 0,
+                            placementCount: element.placementCount || 1,
+                            ...(element.customElement ? { customElement: element.customElement } : {})
                         };
                     }
                 });
+                renderCustomElementButtons();
             }
 
             showSuccess(`Layout loaded successfully for Floor ${currentFloor}!`);
@@ -4209,6 +4569,9 @@ function optimizeLayoutData() {
             row >= bounds.minRow && row <= bounds.maxRow &&
             col >= bounds.minCol && col <= bounds.maxCol) {
             optimizedElements[position] = elementData;
+            if (elementData.customElement) {
+                window.customLayoutElements[elementData.type] = elementData.customElement;
+            }
             console.log('Saving element:', elementData.type, 'at', position, '(no ID needed - visual only)');
         }
     });
@@ -4268,6 +4631,7 @@ function optimizeLayoutData() {
     return {
         bounds: bounds,
         elements: optimizedElements,
+        custom_elements: window.customLayoutElements || {},
         sections: optimizedSections
     };
 }

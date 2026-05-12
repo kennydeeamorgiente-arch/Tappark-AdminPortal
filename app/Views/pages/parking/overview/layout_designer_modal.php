@@ -77,7 +77,7 @@
                     <!-- Layout Elements -->
                     <div class="tools-section">
                         <h4><i class="fas fa-road"></i> Road Elements</h4>
-                        <div class="element-buttons">
+                        <div class="element-buttons" id="roadElementButtons">
                             <button class="element-btn road" data-type="road" onclick="selectElement('road')" style="background: linear-gradient(135deg, #7b1fa2, #512da8); color: white; border: none; padding: var(--element-button-padding); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: var(--element-button-gap); font-size: var(--element-button-font); min-height: calc(var(--grid-cell-size) * 1.3); justify-content: center;">
                                 <span class="element-icon">═</span>
                                 <span>Road</span>
@@ -120,7 +120,7 @@
                     <!-- Obstacle Elements -->
                     <div class="tools-section">
                         <h4><i class="fas fa-cube"></i> Obstacle Elements</h4>
-                        <div class="element-buttons">
+                        <div class="element-buttons" id="obstacleElementButtons">
                             <button class="element-btn wall" data-type="wall" onclick="selectElement('wall')" style="background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: var(--element-button-padding); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: var(--element-button-gap); font-size: var(--element-button-font); min-height: calc(var(--grid-cell-size) * 1.3); justify-content: center;">
                                 <span class="element-icon">▬</span>
                                 <span>Wall</span>
@@ -135,6 +135,7 @@
                             </button>
                         </div>
                     </div>
+
                     
                     <!-- Parking Sections -->
                     <div class="sections-section">

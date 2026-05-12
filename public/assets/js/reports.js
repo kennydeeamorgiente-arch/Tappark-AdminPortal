@@ -269,6 +269,7 @@ function initReportsCharts() {
     // Initialize charts
     initializeCharts();
     window.refreshExistingChartsTheme?.();
+    window.applyWidgetSettings?.('reports');
 }
 
 // Function to clear "No Data" messages
@@ -2239,6 +2240,7 @@ window.loadReportsWithFilter = function (filter, startDate = null, endDate = nul
                 if (typeof window.initPageScripts === 'function') {
                     window.initPageScripts();
                 }
+                window.applyWidgetSettings?.('reports');
             }, 150);
 
             console.log('✅ Reports updated with filter:', filter || 'today');

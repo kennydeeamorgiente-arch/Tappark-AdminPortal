@@ -392,6 +392,7 @@ function initDashboardCharts() {
     // Initialize charts
     initializeCharts();
     window.refreshExistingChartsTheme?.();
+    window.applyWidgetSettings?.('dashboard');
     
     // Enhance chart animations after a delay
     setTimeout(() => {
@@ -1078,6 +1079,7 @@ function loadDashboardWithFilter(filter, startDate = null, endDate = null, optio
                 if (typeof window.stabilizeLayout === 'function') {
                     window.stabilizeLayout();
                 }
+                window.applyWidgetSettings?.('dashboard');
             }, 150);
             
             console.log('✅ Dashboard updated with filter:', filter || 'today');

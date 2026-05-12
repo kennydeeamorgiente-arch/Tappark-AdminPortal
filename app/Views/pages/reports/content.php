@@ -917,6 +917,9 @@
 <script>
     // Export reports functionality
     function exportReports(format) {
+        if (typeof window.applyWidgetSettings === 'function') {
+            window.applyWidgetSettings('reports');
+        }
         const baseUrl = (typeof BASE_URL !== 'undefined') ? BASE_URL : (typeof window.BASE_URL !== 'undefined' ? window.BASE_URL : '/');
         
         // Get current filter state from the page
@@ -1010,8 +1013,13 @@
     
     // Print reports functionality
     function printReports() {
+        if (typeof window.applyWidgetSettings === 'function') {
+            window.applyWidgetSettings('reports');
+        }
         document.body.classList.add('printing-reports');
-        window.print();
+        setTimeout(function() {
+            window.print();
+        }, 150);
     }
 
     window.addEventListener('afterprint', function() {
