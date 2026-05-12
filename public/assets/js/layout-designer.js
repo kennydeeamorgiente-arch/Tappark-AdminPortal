@@ -38,7 +38,8 @@ if (typeof window.directionLabels === 'undefined') {
     };
 }
 
-const CUSTOM_ELEMENT_PREFIX = 'custom-';
+window.CUSTOM_ELEMENT_PREFIX = window.CUSTOM_ELEMENT_PREFIX || 'custom-';
+var CUSTOM_ELEMENT_PREFIX = window.CUSTOM_ELEMENT_PREFIX;
 if (typeof window.customLayoutElements === 'undefined') {
     window.customLayoutElements = {};
 }
