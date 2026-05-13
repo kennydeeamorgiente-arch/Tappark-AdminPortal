@@ -124,6 +124,16 @@
         }
     }
 
+    function notifyWidgetSettingsFailed(page) {
+        const label = page === 'reports' ? 'Reports' : 'Dashboard';
+        const message = `${label} widget settings could not be saved. Please try again.`;
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, 'error');
+        } else {
+            alert(message);
+        }
+    }
+
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, (char) => ({
             '&': '&amp;',
@@ -132,6 +142,43 @@
             '"': '&quot;',
             "'": '&#39;'
         }[char]));
+    }
+
+    function setTextPreservingLeadingIcon(element, text) {
+        if (!element) return;
+        const icon = element.querySelector('i');
+        element.textContent = '';
+        if (icon) {
+            element.appendChild(icon);
+            element.appendChild(document.createTextNode(' '));
+        }
+        element.appendChild(document.createTextNode(text));
+    }
+
+    function subtitleElementForCard(card, createIfMissing = false) {
+        if (!card) return null;
+
+        const existing = card.querySelector([
+            '.widget-subtitle-text',
+            '.card-header > small.text-muted',
+            '.card-header > .text-muted:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)',
+            '.guest-summary-header__meta',
+            '.stats-card-modern small',
+            '.card-body > p.text-muted'
+        ].join(','));
+
+        if (existing || !createIfMissing) {
+            return existing;
+        }
+
+        const header = card.querySelector('.card-header');
+        const title = header?.querySelector('h4,h5,h6');
+        if (!header || !title) return null;
+
+        const subtitle = document.createElement('small');
+        subtitle.className = 'text-muted d-block widget-subtitle-text';
+        title.insertAdjacentElement('afterend', subtitle);
+        return subtitle;
     }
 
     function normalizeId(value) {
@@ -143,7 +190,7 @@
     }
 
     function subtitleFromCard(card) {
-        return card?.querySelector('small,.text-muted,p')?.textContent?.trim() || '';
+        return subtitleElementForCard(card)?.textContent?.trim() || '';
     }
 
     function iconFromCard(card) {
@@ -164,6 +211,10 @@
 
     function chartIdFor(card) {
         return card?.querySelector('canvas')?.id || '';
+    }
+
+    function staticWidgetByType(page, type, index) {
+        return (STATIC_WIDGETS[page] || []).filter(widget => widget[1] === type)[index] || null;
     }
 
     function widgetElementFromCard(card) {
@@ -212,13 +263,14 @@
         const widgets = [];
 
         root.querySelectorAll('.stats-card-modern').forEach((card, index) => {
+            const staticWidget = staticWidgetByType('dashboard', 'stat', index);
             const title = titleFromCard(card);
             widgets.push({
-                id: 'dashboard-stat-' + normalizeId(title || index),
+                id: staticWidget?.[0] || 'dashboard-stat-' + normalizeId(title || index),
                 type: 'stat',
                 title,
                 subtitle: subtitleFromCard(card),
-                source: inferSource(title, title),
+                source: staticWidget?.[4] || inferSource(title, title),
                 element: widgetElementFromCard(card),
                 card
             });
@@ -248,13 +300,14 @@
         const widgets = [];
 
         root.querySelectorAll('.stats-card-modern').forEach((card, index) => {
+            const staticWidget = staticWidgetByType('reports', 'stat', index);
             const title = titleFromCard(card);
             widgets.push({
-                id: 'reports-stat-' + normalizeId(title || index),
+                id: staticWidget?.[0] || 'reports-stat-' + normalizeId(title || index),
                 type: 'stat',
                 title,
                 subtitle: subtitleFromCard(card),
-                source: inferSource(title, title),
+                source: staticWidget?.[4] || inferSource(title, title),
                 element: widgetElementFromCard(card),
                 card
             });
@@ -358,9 +411,10 @@
             }
         }
 
-        const subtitleEl = widget.card.querySelector('.card-header small,.guest-summary-header__meta,small.text-muted');
+        const subtitleEl = subtitleElementForCard(widget.card, typeof setting.subtitle === 'string' && setting.subtitle.trim() !== '');
         if (subtitleEl && typeof setting.subtitle === 'string') {
-            subtitleEl.textContent = setting.subtitle;
+            setTextPreservingLeadingIcon(subtitleEl, setting.subtitle);
+            subtitleEl.classList.toggle('d-none', setting.subtitle.trim() === '');
         }
 
         widget.card.style.setProperty('--widget-accent', setting.accent || '#8b1f2b');
@@ -425,7 +479,7 @@
                     </div>
                     <div class="widget-field widget-field-wide">
                         <label>${isStat ? 'Metric Text' : 'Subtitle'}</label>
-                        <input type="text" class="form-control form-control-sm widget-subtitle" value="${escapeHtml(setting.subtitle)}" ${isStat ? 'readonly aria-readonly="true"' : ''}>
+                        <input type="text" class="form-control form-control-sm widget-subtitle" value="${escapeHtml(setting.subtitle)}">
                     </div>
                     <div class="widget-field widget-field-icon">
                         <label>Icon</label>
@@ -467,7 +521,7 @@
         bootstrap.Modal.getOrCreateInstance(modal).show();
     }
 
-    function saveFromModal() {
+    async function saveFromModal() {
         const page = document.getElementById('widgetSettingsModal')?.dataset.page || pageKey();
         if (!page) return;
         const settings = readSettings(page);
@@ -488,7 +542,13 @@
             };
         });
         writeSettings(page, settings);
-        saveServerSettings(page, settings);
+        const response = await saveServerSettings(page, settings);
+        const result = response && response.ok ? await response.json().catch(() => null) : null;
+        if (!result?.success || !result.settings) {
+            notifyWidgetSettingsFailed(page);
+            return;
+        }
+        writeSettings(page, result.settings);
         applyWidgetSettings(page);
         bootstrap.Modal.getInstance(document.getElementById('widgetSettingsModal'))?.hide();
         notifyWidgetSettingsSaved(page);

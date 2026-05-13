@@ -88,7 +88,7 @@
             "visible": true,
             "order": 8,
             "title": "Parking Occupancy",
-            "subtitle": "",
+            "subtitle": "SADASDASDA",
             "icon": "fas fa-chart-pie",
             "accent": "#8b1f2b",
             "size": "medium",
@@ -154,6 +154,18 @@
             "size": "medium",
             "chartType": "",
             "dataSource": "Guest bookings",
+            "exportVisible": true
+        },
+        "dashboard-stat-total-subbs": {
+            "visible": true,
+            "order": 1,
+            "title": "Total SUBBS",
+            "subtitle": "Active: 58 | Inactive: 1",
+            "icon": "fas fa-users",
+            "accent": "#8b1f2b",
+            "size": "small",
+            "chartType": "",
+            "dataSource": "Bookings",
             "exportVisible": true
         }
     }
