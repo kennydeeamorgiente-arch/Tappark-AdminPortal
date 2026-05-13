@@ -282,10 +282,11 @@ class ReportsModel extends Model
     public function getVehicleTypeDistribution($startDate = null, $endDate = null)
     {
         try {
-            $vehicleTypeExpr = $this->getNormalizedVehicleTypeExpr('v.vehicle_type');
+            $vehicleTypeExpr = $this->getNormalizedVehicleTypeExpr('COALESCE(vt.vehicle_type_name, v.vehicle_type)');
             $builder = $this->db->table('reservations r')
                 ->select("{$vehicleTypeExpr} as vehicle_type, COUNT(*) as count", false)
                 ->join('vehicles v', 'r.vehicle_id = v.vehicle_id')
+                ->join('vehicle_types vt', 'vt.vehicle_type_id = v.vehicle_type_id', 'left')
                 ->groupBy($vehicleTypeExpr, false)
                 ->orderby('count', 'DESC');
             
@@ -1019,10 +1020,11 @@ class ReportsModel extends Model
                 ->getResultArray();
             
             // Guest bookings by vehicle type
-            $vehicleTypeExpr = $this->getNormalizedVehicleTypeExpr('v.vehicle_type');
+            $vehicleTypeExpr = $this->getNormalizedVehicleTypeExpr('COALESCE(vt.vehicle_type_name, v.vehicle_type)');
             $guestBookingsByVehicle = $this->db->table('guest_bookings gb')
                 ->select("{$vehicleTypeExpr} as vehicle_type, COUNT(*) as count", false)
                 ->join('vehicles v', 'v.vehicle_id = gb.vehicle_id')
+                ->join('vehicle_types vt', 'vt.vehicle_type_id = v.vehicle_type_id', 'left')
                 ->where('gb.created_at >=', $start)
                 ->where('gb.created_at <=', $end)
                 ->groupBy($vehicleTypeExpr, false)

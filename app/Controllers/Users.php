@@ -837,7 +837,7 @@ class Users extends BaseController
                     gu.first_name as guest_first_name,
                     gu.last_name as guest_last_name,
                     gu.email as guest_email,
-                    v.vehicle_type,
+                    COALESCE(vt.vehicle_type_name, v.vehicle_type) as vehicle_type,
                     v.brand as vehicle_brand,
                     v.color as vehicle_color,
                     v.plate_number,
@@ -848,6 +848,7 @@ class Users extends BaseController
                 ')
                 ->join('users gu', 'gu.user_id = gb.guest_user_id', 'left')
                 ->join('vehicles v', 'v.vehicle_id = gb.vehicle_id', 'left')
+                ->join('vehicle_types vt', 'vt.vehicle_type_id = v.vehicle_type_id', 'left')
                 ->join('users u', 'u.user_id = gb.attendant_id', 'left')
                 ->join('types t', 't.type_id = u.user_type_id', 'left')
                 ->join('reservations r', 'r.reservation_id = gb.reservation_id', 'left');
@@ -866,9 +867,13 @@ class Users extends BaseController
                 $builder->where('gb.attendant_id', $filters['attendant_id']);
             }
             
-            if (!empty($filters['vehicle_type'])) {
-                $builder->where('v.vehicle_type', $filters['vehicle_type']);
+        if (!empty($filters['vehicle_type'])) {
+            if (ctype_digit((string) $filters['vehicle_type'])) {
+                $builder->where('v.vehicle_type_id', (int) $filters['vehicle_type']);
+            } else {
+                $builder->where('COALESCE(vt.vehicle_type_name, v.vehicle_type)', $filters['vehicle_type']);
             }
+        }
             
             if (!empty($filters['date_range'])) {
                 $builder->where($this->getDateRangeCondition($filters['date_range'], 'gb.created_at'));
@@ -1017,7 +1022,7 @@ class Users extends BaseController
                     gu.first_name as guest_first_name,
                     gu.last_name as guest_last_name,
                     gu.email as guest_email,
-                    v.vehicle_type,
+                    COALESCE(vt.vehicle_type_name, v.vehicle_type) as vehicle_type,
                     v.brand as vehicle_brand,
                     v.color as vehicle_color,
                     v.plate_number,
@@ -1031,6 +1036,7 @@ class Users extends BaseController
                 ')
                 ->join('users gu', 'gu.user_id = gb.guest_user_id', 'left')
                 ->join('vehicles v', 'v.vehicle_id = gb.vehicle_id', 'left')
+                ->join('vehicle_types vt', 'vt.vehicle_type_id = v.vehicle_type_id', 'left')
                 ->join('users u', 'u.user_id = gb.attendant_id', 'left')
                 ->join('types t', 't.type_id = u.user_type_id', 'left')
                 ->join('reservations r', 'r.reservation_id = gb.reservation_id', 'left')
@@ -1086,23 +1092,20 @@ class Users extends BaseController
         try {
             $db = \Config\Database::connect();
             
-            // Get distinct vehicle types from vehicles table
-            $types = $db->table('vehicles')
-                ->select('vehicle_type')
-                ->distinct()
-                ->where('vehicle_type IS NOT NULL')
-                ->where('vehicle_type !=', '')
-                ->orderBy('vehicle_type', 'ASC')
+            // Use the canonical lookup table for dropdown values
+            $types = $db->table('vehicle_types')
+                ->select('vehicle_type_id, vehicle_type_name')
+                ->orderBy('vehicle_type_name', 'ASC')
                 ->get()
                 ->getResultArray();
             
             // Format for dropdown
             $formattedTypes = [];
             foreach ($types as $type) {
-                if (!empty($type['vehicle_type'])) {
+                if (!empty($type['vehicle_type_name'])) {
                     $formattedTypes[] = [
-                        'value' => $type['vehicle_type'],
-                        'label' => ucfirst($type['vehicle_type'])
+                        'value' => $type['vehicle_type_id'],
+                        'label' => ucfirst($type['vehicle_type_name'])
                     ];
                 }
             }
@@ -1142,7 +1145,7 @@ class Users extends BaseController
                 gu.first_name as guest_first_name,
                 gu.last_name as guest_last_name,
                 gu.email as guest_email,
-                v.vehicle_type,
+                COALESCE(vt.vehicle_type_name, v.vehicle_type) as vehicle_type,
                 v.brand as vehicle_brand,
                 v.color as vehicle_color,
                 v.plate_number,
@@ -1155,6 +1158,7 @@ class Users extends BaseController
             ')
             ->join('users gu', 'gu.user_id = gb.guest_user_id', 'left')
             ->join('vehicles v', 'v.vehicle_id = gb.vehicle_id', 'left')
+            ->join('vehicle_types vt', 'vt.vehicle_type_id = v.vehicle_type_id', 'left')
             ->join('users u', 'u.user_id = gb.attendant_id', 'left')
             ->join('types t', 't.type_id = u.user_type_id', 'left')
             ->join('reservations r', 'r.reservation_id = gb.reservation_id', 'left');
@@ -1174,7 +1178,11 @@ class Users extends BaseController
         }
         
         if (!empty($filters['vehicle_type'])) {
-            $builder->where('v.vehicle_type', $filters['vehicle_type']);
+            if (ctype_digit((string) $filters['vehicle_type'])) {
+                $builder->where('v.vehicle_type_id', (int) $filters['vehicle_type']);
+            } else {
+                $builder->where('COALESCE(vt.vehicle_type_name, v.vehicle_type)', $filters['vehicle_type']);
+            }
         }
         
         if (!empty($filters['date_range'])) {

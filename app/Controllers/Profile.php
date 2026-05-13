@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\UserModel;
+use App\Models\SystemSettingsModel;
 
 class Profile extends BaseController
 {
@@ -326,7 +327,10 @@ class Profile extends BaseController
                 ])->setStatusCode(400);
             }
 
-            // Store in session (you can also save to database if you have a settings table)
+            $settingsModel = new SystemSettingsModel();
+            $settingsModel->upsertGroupSettings($data, 'application');
+
+            // Keep session hot so the existing views continue working immediately
             session()->set([
                 'app_settings' => $data
             ]);

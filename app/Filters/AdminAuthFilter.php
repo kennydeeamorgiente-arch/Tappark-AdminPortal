@@ -3,6 +3,7 @@
 namespace App\Filters;
 
 use App\Models\UserModel;
+use App\Models\SystemSettingsModel;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -32,6 +33,18 @@ class AdminAuthFilter implements FilterInterface
 
         // Apply global settings from session
         $appSettings = $session->get('app_settings');
+        if (!$appSettings) {
+            try {
+                $settingsModel = new SystemSettingsModel();
+                $appSettings = $settingsModel->getGroupSettings('application');
+                if (!empty($appSettings)) {
+                    $session->set(['app_settings' => $appSettings]);
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'AdminAuthFilter settings load failed: ' . $e->getMessage());
+            }
+        }
+
         if ($appSettings) {
             // Apply timezone
             if (!empty($appSettings['timezone'])) {

@@ -2513,6 +2513,161 @@ if (typeof bootstrap === 'undefined') {
             }
         });
     });
+
+    // ====================================
+    // VEHICLE TYPES MANAGEMENT
+    // ====================================
+    function escapeHtmlValue(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    function loadVehicleTypesSettings() {
+        const body = $('#vehicleTypesSettingsTableBody');
+        if (!body.length) {
+            return;
+        }
+
+        body.html('<tr><td colspan="3" class="text-center text-muted py-3">Loading vehicle types...</td></tr>');
+
+        $.ajax({
+            url: BASE_URL + 'admin/vehicle-types',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && Array.isArray(response.data)) {
+                    renderVehicleTypesSettings(response.data);
+                } else {
+                    body.html('<tr><td colspan="3" class="text-center text-muted py-3">No vehicle types found.</td></tr>');
+                }
+            },
+            error: function() {
+                body.html('<tr><td colspan="3" class="text-center text-muted py-3">Failed to load vehicle types.</td></tr>');
+            }
+        });
+    }
+
+    function renderVehicleTypesSettings(types) {
+        const body = $('#vehicleTypesSettingsTableBody');
+        if (!body.length) {
+            return;
+        }
+
+        if (!types.length) {
+            body.html('<tr><td colspan="3" class="text-center text-muted py-3">No vehicle types found.</td></tr>');
+            return;
+        }
+
+        let html = '';
+        types.forEach(type => {
+            html += `
+                <tr data-id="${type.vehicle_type_id}">
+                    <td class="fw-semibold">${escapeHtmlValue(type.vehicle_type_name || '')}</td>
+                    <td>
+                        <input type="number" step="0.01" min="0" class="form-control form-control-sm vehicle-type-rate-input" value="${escapeHtmlValue(type.vehicle_type_deduction_rate ?? 0)}">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-success btn-sm save-vehicle-type-rate-btn" data-id="${type.vehicle_type_id}">
+                            <i class="fas fa-save me-1"></i>Save
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        body.html(html);
+    }
+
+    $(document).on('shown.bs.tab', '#system-tab', function() {
+        loadVehicleTypesSettings();
+    });
+
+    $(document).on('click', '#addVehicleTypeBtn', function() {
+        const btn = $(this);
+        const originalText = btn.html();
+        const name = ($('#newVehicleTypeName').val() || '').trim();
+        const rate = $('#newVehicleTypeRate').val();
+
+        $('#vehicleTypesSettingsError, #vehicleTypesSettingsSuccess').addClass('d-none');
+
+        if (!name) {
+            $('#vehicleTypesSettingsError').find('span').text('Vehicle type name is required');
+            $('#vehicleTypesSettingsError').removeClass('d-none');
+            return;
+        }
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Adding...');
+
+        $.ajax({
+            url: BASE_URL + 'admin/vehicle-types',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                vehicle_type_name: name,
+                rate: rate
+            }),
+            success: function(response) {
+                if (response.success) {
+                    $('#newVehicleTypeName').val('');
+                    $('#newVehicleTypeRate').val('');
+                    $('#vehicleTypesSettingsSuccess').find('span').text(response.message || 'Vehicle type created successfully');
+                    $('#vehicleTypesSettingsSuccess').removeClass('d-none');
+                    loadVehicleTypesSettings();
+                } else {
+                    $('#vehicleTypesSettingsError').find('span').text(response.message || 'Failed to add vehicle type');
+                    $('#vehicleTypesSettingsError').removeClass('d-none');
+                }
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                $('#vehicleTypesSettingsError').find('span').text(response?.message || 'An error occurred. Please try again.');
+                $('#vehicleTypesSettingsError').removeClass('d-none');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    $(document).on('click', '.save-vehicle-type-rate-btn', function() {
+        const btn = $(this);
+        const id = btn.data('id');
+        const row = btn.closest('tr');
+        const rate = row.find('.vehicle-type-rate-input').val();
+        const originalText = btn.html();
+
+        $('#vehicleTypesSettingsError, #vehicleTypesSettingsSuccess').addClass('d-none');
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
+
+        $.ajax({
+            url: BASE_URL + 'admin/vehicle-types/' + id,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ rate }),
+            success: function(response) {
+                if (response.success) {
+                    $('#vehicleTypesSettingsSuccess').find('span').text(response.message || 'Rate updated successfully');
+                    $('#vehicleTypesSettingsSuccess').removeClass('d-none');
+                } else {
+                    $('#vehicleTypesSettingsError').find('span').text(response.message || 'Failed to save rate');
+                    $('#vehicleTypesSettingsError').removeClass('d-none');
+                }
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                $('#vehicleTypesSettingsError').find('span').text(response?.message || 'An error occurred. Please try again.');
+                $('#vehicleTypesSettingsError').removeClass('d-none');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
     
     // ====================================
     // SAVE DATABASE CONFIGURATION

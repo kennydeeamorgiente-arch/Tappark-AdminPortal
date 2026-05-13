@@ -32,6 +32,87 @@ class VehicleTypes extends BaseController
     }
 
     /**
+     * Create a new vehicle type
+     */
+    public function create()
+    {
+        $json = $this->request->getJSON(true);
+        $name = trim((string) ($json['vehicle_type_name'] ?? ''));
+        $rate = $json['rate'] ?? null;
+
+        if ($name === '') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vehicle type name is required'
+            ])->setStatusCode(400);
+        }
+
+        if (mb_strlen($name) > 100) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vehicle type name is too long'
+            ])->setStatusCode(400);
+        }
+
+        if ($rate !== null && $rate !== '' && (!is_numeric($rate) || $rate < 0)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Rate must be a positive number'
+            ])->setStatusCode(400);
+        }
+
+        $existing = $this->db->table('vehicle_types')
+            ->where('LOWER(vehicle_type_name)', mb_strtolower($name))
+            ->countAllResults();
+
+        if ($existing > 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vehicle type already exists'
+            ])->setStatusCode(409);
+        }
+
+        $this->db->transStart();
+
+        $inserted = $this->db->table('vehicle_types')->insert([
+            'vehicle_type_name' => $name
+        ]);
+
+        $newId = $this->db->insertID();
+
+        if ($inserted && $newId && $rate !== null && $rate !== '') {
+            $this->db->table('vehicle_type_deduction_rates')->insert([
+                'vehicle_type_id' => $newId,
+                'deduction_rate' => $rate,
+                'is_active' => 1
+            ]);
+        }
+
+        $this->db->transComplete();
+
+        if ($this->db->transStatus()) {
+            if (function_exists('log_create')) {
+                log_create('Vehicle Type', $newId, $name);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Vehicle type created successfully',
+                'data' => [
+                    'vehicle_type_id' => $newId,
+                    'vehicle_type_name' => $name,
+                    'vehicle_type_deduction_rate' => (float) ($rate ?? 0)
+                ]
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'success' => false,
+            'message' => 'Failed to create vehicle type'
+        ])->setStatusCode(500);
+    }
+
+    /**
      * Update vehicle type deduction rate
      */
     public function update($id)

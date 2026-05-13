@@ -336,6 +336,56 @@
                             <?= form_close() ?>
                         </div>
 
+                        <!-- Vehicle Types -->
+                        <div class="mb-4">
+                            <h6 class="mb-3 fw-semibold d-flex align-items-center">
+                                <i class="fas fa-car-side me-2" style="color: var(--tappark-maroon);"></i>Vehicle Types
+                            </h6>
+                            <div id="vehicleTypesSettingsError" class="alert alert-danger d-none py-2 mb-2">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <span></span>
+                            </div>
+                            <div id="vehicleTypesSettingsSuccess" class="alert alert-success d-none py-2 mb-2">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span></span>
+                            </div>
+                            <div class="card border-0 shadow-sm settings-card">
+                                <div class="card-body p-4">
+                                    <div class="row g-2 align-items-end mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label small">Vehicle Type Name</label>
+                                            <input type="text" class="form-control form-control-sm" id="newVehicleTypeName" placeholder="e.g. SUV">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Deduction Rate</label>
+                                            <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="newVehicleTypeRate" placeholder="0.00">
+                                        </div>
+                                        <div class="col-md-2 d-grid">
+                                            <button type="button" class="btn btn-maroon btn-sm" id="addVehicleTypeBtn">
+                                                <i class="fas fa-plus me-1"></i>Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th style="width: 180px;">Rate</th>
+                                                    <th style="width: 120px;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="vehicleTypesSettingsTableBody">
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">Loading vehicle types...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Layout and Widget System Settings -->
                         <div class="mb-4">
                             <h6 class="mb-3 fw-semibold d-flex align-items-center">

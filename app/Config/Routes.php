@@ -80,6 +80,7 @@ $routes->get('subscriptions/export', 'Subscriptions::export');
 
 // Vehicle Types routes
 $routes->get('admin/vehicle-types', 'VehicleTypes::list');
+$routes->post('admin/vehicle-types', 'VehicleTypes::create');
 $routes->put('admin/vehicle-types/(:num)', 'VehicleTypes::update/$1');
 
 // Attendants routes

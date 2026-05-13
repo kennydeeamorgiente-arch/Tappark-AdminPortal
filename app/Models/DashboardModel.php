@@ -70,10 +70,11 @@ class DashboardModel extends Model
             ];
         }
         
-        $vehicleTypeExpr = $this->getNormalizedVehicleTypeExpr('v.vehicle_type');
+        $vehicleTypeExpr = $this->getNormalizedVehicleTypeExpr('COALESCE(vt.vehicle_type_name, v.vehicle_type)');
         $guestBookingsByVehicle = $db->table('guest_bookings gb')
             ->select("{$vehicleTypeExpr} as vehicle_type, COUNT(*) as count", false)
             ->join('vehicles v', 'v.vehicle_id = gb.vehicle_id')
+            ->join('vehicle_types vt', 'vt.vehicle_type_id = v.vehicle_type_id', 'left')
             ->where('gb.created_at >=', $start)
             ->where('gb.created_at <=', $end)
             ->groupBy($vehicleTypeExpr, false)
@@ -660,15 +661,16 @@ class DashboardModel extends Model
         try {
             $query = "
                 SELECT 
-                    v.vehicle_type,
+                    COALESCE(vt.vehicle_type_name, v.vehicle_type) as vehicle_type,
                     COUNT(DISTINCT r.user_id) as unique_users,
                     COUNT(r.reservation_id) as active_bookings,
                     AVG(TIMESTAMPDIFF(HOUR, r.start_time, COALESCE(r.end_time, NOW()))) as avg_duration_hours
                 FROM reservations r
                 LEFT JOIN vehicles v ON r.vehicle_id = v.vehicle_id
+                LEFT JOIN vehicle_types vt ON vt.vehicle_type_id = v.vehicle_type_id
                 WHERE r.start_time IS NOT NULL 
                 AND (r.end_time IS NULL OR r.end_time > NOW() - INTERVAL 24 HOUR)
-                GROUP BY v.vehicle_type
+                GROUP BY COALESCE(vt.vehicle_type_name, v.vehicle_type)
                 ORDER BY active_bookings DESC
             ";
             
