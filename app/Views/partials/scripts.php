@@ -1211,6 +1211,27 @@ if (typeof bootstrap === 'undefined') {
             // Load the page
             loadPage(route, title);
         });
+
+        // Sidebar brand/logo click - go back to dashboard
+        $(document).on('click', '.sidebar-brand', function(e) {
+            e.preventDefault();
+
+            $('.menu-link, .submenu-link').removeClass('active');
+            $('.menu-link[data-route="dashboard"]').addClass('active');
+
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile && $('#sidebar').hasClass('show')) {
+                $('#sidebar').removeClass('show');
+                $('#sidebarOverlay').removeClass('show');
+                $('body').css('overflow', '');
+            }
+
+            if (typeof loadPage === 'function') {
+                loadPage('dashboard', 'Dashboard');
+            } else {
+                window.location.href = BASE_URL + 'dashboard';
+            }
+        });
         
         // ====================================
         // PAGE TITLE CLICK TO SCROLL TO TOP
@@ -1753,7 +1774,7 @@ if (typeof bootstrap === 'undefined') {
     // Reset profile modal to view mode when opened
     $(document).on('show.bs.modal', '#profileModal', function() {
         // Reset to view mode
-        $('#firstName, #lastName, #email').prop('readonly', true).addClass('bg-light');
+        $('#firstName, #lastName, #email').prop('readonly', true).prop('disabled', true).addClass('bg-light');
         $('#profilePictureFile').prop('disabled', true).addClass('bg-light');
         $('#profilePictureInput').prop('disabled', true);
         $('#profilePictureCameraBtn').addClass('disabled').css('pointer-events', 'none');
@@ -2066,8 +2087,7 @@ if (typeof bootstrap === 'undefined') {
     
     // Profile Edit Button - Enable Edit Mode
     $(document).on('click', '#profileEditBtn', function() {
-        // Enable form fields
-        $('#firstName, #lastName, #email').prop('readonly', false).removeClass('bg-light');
+        // Only allow the profile picture to be changed
         $('#profilePictureFile').prop('disabled', false).removeClass('bg-light');
         $('#profilePictureInput').prop('disabled', false);
         $('#profilePictureCameraBtn').removeClass('disabled').css('pointer-events', 'auto');
@@ -2091,18 +2111,14 @@ if (typeof bootstrap === 'undefined') {
     $(document).on('click', '#profileCancelBtn', function() {
         // Use stored original values (updated after successful save)
         const original = window.originalProfileValues || {};
-        
-        $('#firstName').val(original.firstName || '<?= esc($firstName) ?>');
-        $('#lastName').val(original.lastName || '<?= esc($lastName) ?>');
-        $('#email').val(original.email || '<?= esc($email) ?>');
         $('#profilePictureFile, #profilePictureInput').val('');
         
         // Reset avatar preview to original/saved
         const avatarSrc = original.avatarSrc || '<?= esc($avatarSrc) ?>';
         $('#profileAvatarPreview').attr('src', avatarSrc);
         
-        // Disable form fields (return to view mode)
-        $('#firstName, #lastName, #email').prop('readonly', true).addClass('bg-light');
+        // Disable picture controls again (return to view mode)
+        $('#firstName, #lastName, #email').prop('readonly', true).prop('disabled', true).addClass('bg-light');
         $('#profilePictureFile').prop('disabled', true).addClass('bg-light');
         $('#profilePictureInput').prop('disabled', true);
         $('#profilePictureCameraBtn').addClass('disabled').css('pointer-events', 'none');
@@ -2130,7 +2146,8 @@ if (typeof bootstrap === 'undefined') {
         $('#profileError, #profileSuccess').addClass('d-none');
         $('#profileForm input').removeClass('is-invalid is-valid');
         
-        // Get form data
+        const fileInput = $('#profilePictureFile')[0];
+        const hasFile = fileInput.files && fileInput.files.length > 0;
         const firstName = $('#firstName').val().trim();
         const lastName = $('#lastName').val().trim();
         const email = $('#email').val().trim();
@@ -2162,8 +2179,6 @@ if (typeof bootstrap === 'undefined') {
         const originalFirstName = original.firstName || '<?= esc($firstName) ?>';
         const originalLastName = original.lastName || '<?= esc($lastName) ?>';
         const originalEmail = original.email || '<?= esc($email) ?>';
-        const fileInput = $('#profilePictureFile')[0];
-        const hasFile = fileInput.files && fileInput.files.length > 0;
         
         if (firstName === originalFirstName && 
             lastName === originalLastName && 
@@ -2203,18 +2218,11 @@ if (typeof bootstrap === 'undefined') {
     // Profile Confirm Yes Button - Submit Form
     $(document).on('click', '#profileConfirmYesBtn', function() {
         // Get form data
-        const firstName = $('#firstName').val().trim();
-        const lastName = $('#lastName').val().trim();
-        const email = $('#email').val().trim();
         const fileInput = $('#profilePictureFile')[0];
         const hasFile = fileInput.files && fileInput.files.length > 0;
         
         // Create FormData for file upload
         const formData = new FormData();
-        formData.append('first_name', firstName);
-        formData.append('last_name', lastName);
-        formData.append('email', email);
-        
         if (hasFile) {
             formData.append('profile_picture', fileInput.files[0]);
         }
@@ -2235,15 +2243,7 @@ if (typeof bootstrap === 'undefined') {
                 if (response.success) {
                     $('#profileSuccess').find('span').text(response.message || 'Profile updated successfully!');
                     $('#profileSuccess').removeClass('d-none');
-                    
-                    // Update displayed name and email in modal
-                    $('#profileDisplayName').text(firstName + ' ' + lastName);
-                    $('#profileDisplayEmail').text(email);
-                    
-                    // Update sidebar user info (no reload needed - update directly via AJAX)
-                    $('.user-name').text(firstName + ' ' + lastName);
-                    $('.user-email').text(email);
-                    
+
                     // Update avatars if new picture was uploaded
                     if (response.profile_picture) {
                         const newAvatarSrc = BASE_URL + 'uploads/profiles/' + response.profile_picture + '?t=' + new Date().getTime();
@@ -2351,196 +2351,6 @@ if (typeof bootstrap === 'undefined') {
     $(document).on('submit', '#profileForm', function(e) {
         e.preventDefault();
         // Form submission is now handled through the Edit button flow
-    });
-    
-    // ====================================
-    // CHANGE PASSWORD FUNCTIONALITY
-    // ====================================
-    
-    function openChangePasswordModal() {
-        // Hide profile modal first
-        const profileModal = bootstrap.Modal.getInstance(document.getElementById('profileModal'));
-        if (profileModal) {
-            profileModal.hide();
-        }
-        
-        // Reset form
-        $('#changePasswordForm')[0].reset();
-        $('#changePasswordForm').removeClass('was-validated');
-        $('#changePasswordError, #changePasswordSuccess').addClass('d-none');
-        $('#passwordStrength').html('Password strength: <span class="text-muted">Not set</span>');
-        
-        // Wait a bit for profile modal to hide, then show change password modal
-        setTimeout(function() {
-            const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
-            modal.show();
-        }, 300);
-    }
-    window.openChangePasswordModal = openChangePasswordModal;
-    
-    // Function to go back to profile modal
-    function backToProfileModal() {
-        // Hide change password modal
-        const changePasswordModal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
-        if (changePasswordModal) {
-            changePasswordModal.hide();
-        }
-        
-        // Wait a bit for change password modal to hide, then show profile modal
-        setTimeout(function() {
-            const profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
-            profileModal.show();
-            
-            // Switch to Settings tab and scroll to password section
-            $('#settings-tab').tab('show');
-            setTimeout(function() {
-                const passwordSection = document.querySelector('#settings-content .settings-card:last-child');
-                if (passwordSection) {
-                    passwordSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
-        }, 300);
-    }
-    window.backToProfileModal = backToProfileModal;
-    
-    // Toggle Password Visibility
-    function togglePasswordVisibility(inputId) {
-        const input = document.getElementById(inputId);
-        const button = event.currentTarget;
-        const icon = button.querySelector('i');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    }
-    window.togglePasswordVisibility = togglePasswordVisibility;
-    
-    // Password Strength Indicator
-    $(document).on('input', '#newPassword', function() {
-        const password = $(this).val();
-        const strengthIndicator = $('#passwordStrength');
-        
-        if (password.length === 0) {
-            strengthIndicator.html('Password strength: <span class="text-muted">Not set</span>');
-            return;
-        }
-        
-        let strength = 0;
-        if (password.length >= 8) strength++;
-        if (password.length >= 12) strength++;
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-        if (/\d/.test(password)) strength++;
-        if (/[^a-zA-Z0-9]/.test(password)) strength++;
-        
-        let text = '';
-        let icon = '';
-        let className = '';
-        
-        if (strength <= 2) {
-            text = 'Weak';
-            icon = '<i class="fas fa-times-circle me-1"></i>';
-            className = 'text-danger';
-        } else if (strength <= 3) {
-            text = 'Medium';
-            icon = '<i class="fas fa-exclamation-circle me-1"></i>';
-            className = 'text-warning';
-        } else {
-            text = 'Strong';
-            icon = '<i class="fas fa-check-circle me-1"></i>';
-            className = 'text-success';
-        }
-        
-        strengthIndicator.html(`Password strength: <span class="${className} fw-bold">${icon}${text}</span>`);
-    });
-    
-    // Change Password Form Submission
-    $(document).on('submit', '#changePasswordForm', function(e) {
-        e.preventDefault();
-        
-        const currentPassword = $('#currentPassword').val();
-        const newPassword = $('#newPassword').val();
-        const confirmPassword = $('#confirmPassword').val();
-        
-        // Hide previous messages
-        $('#changePasswordError, #changePasswordSuccess').addClass('d-none');
-        $('#changePasswordForm input').removeClass('is-invalid');
-        
-        // Validation
-        if (newPassword !== confirmPassword) {
-            $('#changePasswordError').find('span').text('New passwords do not match!');
-            $('#changePasswordError').removeClass('d-none');
-            $('#confirmPassword').addClass('is-invalid');
-            return;
-        }
-        
-        if (newPassword.length < 8) {
-            $('#changePasswordError').find('span').text('Password must be at least 8 characters long!');
-            $('#changePasswordError').removeClass('d-none');
-            $('#newPassword').addClass('is-invalid');
-            return;
-        }
-        
-        if (!/\d/.test(newPassword) || !/[a-zA-Z]/.test(newPassword)) {
-            $('#changePasswordError').find('span').text('Password must contain both letters and numbers!');
-            $('#changePasswordError').removeClass('d-none');
-            $('#newPassword').addClass('is-invalid');
-            return;
-        }
-        
-        // Show loading
-        const submitBtn = $('#changePasswordBtn');
-        const originalText = submitBtn.html();
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Changing...');
-        
-        // AJAX request to backend
-        $.ajax({
-            url: BASE_URL + 'profile/change-password',
-            method: 'POST',
-            data: {
-                current_password: currentPassword,
-                new_password: newPassword,
-                confirm_password: confirmPassword
-            },
-            success: function(response) {
-                if (response.success) {
-                    $('#changePasswordSuccess').find('span').text(response.message || 'Password changed successfully!');
-                    $('#changePasswordSuccess').removeClass('d-none');
-                    $('#changePasswordForm')[0].reset();
-                    $('#passwordStrength').html('Password strength: <span class="text-muted">Not set</span>');
-                    
-                    // Close modal and go back to profile modal after 2 seconds
-                    setTimeout(function() {
-                        const changePasswordModal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
-                        if (changePasswordModal) {
-                            changePasswordModal.hide();
-                        }
-                        // Go back to profile modal after a short delay
-                        setTimeout(function() {
-                            const profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
-                            profileModal.show();
-                            $('#settings-tab').tab('show');
-                        }, 300);
-                    }, 2000);
-                } else {
-                    $('#changePasswordError').find('span').text(response.message || 'Failed to change password');
-                    $('#changePasswordError').removeClass('d-none');
-                }
-            },
-            error: function(xhr) {
-                const response = xhr.responseJSON;
-                $('#changePasswordError').find('span').text(response?.message || 'An error occurred. Please try again.');
-                $('#changePasswordError').removeClass('d-none');
-            },
-            complete: function() {
-                submitBtn.prop('disabled', false).html(originalText);
-            }
-        });
     });
     
     // ====================================

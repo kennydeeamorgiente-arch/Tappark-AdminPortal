@@ -18,13 +18,8 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-content" type="button">
-                            <i class="fas fa-cog me-2"></i>Settings
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
                         <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system-content" type="button">
-                            <i class="fas fa-server me-2"></i>System
+                            <i class="fas fa-server me-2"></i>System Settings
                         </button>
                     </li>
                 </ul>
@@ -127,24 +122,30 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="mb-0 fw-semibold">Personal Information</h6>
                                     <button type="button" class="btn btn-maroon btn-sm" id="profileEditBtn">
-                                        <i class="fas fa-pen me-1"></i> Edit
+                                        <i class="fas fa-camera me-1"></i> Change Picture
                                     </button>
                                 </div>
+                                <!--
+                                <div class="alert alert-info py-2 mb-3">
+                                    <i class="fas fa-lock me-2"></i>
+                                    <small class="mb-0">Name, email, and user type are managed by the system and cannot be edited here.</small>
+                                </div>
+-->
                                 <?= form_open('profile/update', ['id' => 'profileForm', 'enctype' => 'multipart/form-data']) ?>
                                     <div id="profileFormSection">
                                     <div class="row mb-2">
                                         <div class="col-md-6 mb-2">
                                             <label class="form-label small">First Name <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control form-control-sm bg-light" id="firstName" name="first_name" value="<?= esc($firstName) ?>" required readonly>
+                                            <input type="text" class="form-control form-control-sm bg-light" id="firstName" name="first_name" value="<?= esc($firstName) ?>" required readonly disabled>
                                         </div>
                                         <div class="col-md-6 mb-2">
                                             <label class="form-label small">Last Name <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control form-control-sm bg-light" id="lastName" name="last_name" value="<?= esc($lastName) ?>" required readonly>
+                                            <input type="text" class="form-control form-control-sm bg-light" id="lastName" name="last_name" value="<?= esc($lastName) ?>" required readonly disabled>
                                         </div>
                                     </div>
                                     <div class="mb-2">
                                         <label class="form-label small">Email Address <span class="text-danger">*</span></label>
-                                        <input type="email" class="form-control form-control-sm bg-light" id="email" name="email" value="<?= esc($email) ?>" required readonly>
+                                        <input type="email" class="form-control form-control-sm bg-light" id="email" name="email" value="<?= esc($email) ?>" required readonly disabled>
                                     </div>
                                     <div class="mb-2">
                                         <label class="form-label small">Profile Picture</label>
@@ -153,7 +154,7 @@
                                     </div>
                                     <div class="mb-2">
                                         <label class="form-label small">User Type</label>
-                                        <input type="text" class="form-control form-control-sm bg-light" value="<?= esc($userTypeLabel) ?>" disabled>
+                                        <input type="text" class="form-control form-control-sm bg-light" value="<?= esc($userTypeLabel) ?>" disabled readonly>
                                     </div>
                                     
                                     <!-- Normal Action Buttons (hidden by default) -->
@@ -188,8 +189,8 @@
                         </div>
                     </div>
 
-                    <!-- Settings Tab -->
-                    <div class="tab-pane fade" id="settings-content">
+                    <!-- System Tab -->
+                    <div class="tab-pane fade" id="system-content">
                         <!-- Theme Settings Card -->
                         <div class="card border-0 shadow-sm mb-3 settings-card">
                             <div class="card-body p-4">
@@ -213,39 +214,8 @@
                             </div>
                         </div>
 
-                        <!-- Security Settings Card -->
-                        <div class="card border-0 shadow-sm mb-3 settings-card">
-                            <div class="card-body p-4">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="settings-icon-wrapper me-3">
-                                        <i class="fas fa-shield-alt settings-icon"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 fw-semibold">Security Settings</h6>
-                                        <small class="text-muted">Manage your account security</small>
-                                    </div>
-                                </div>
-                                <hr class="my-3">
-                                <div class="d-flex align-items-start justify-content-between mb-3">
-                                    <div class="flex-grow-1 me-3">
-                                        <h6 class="mb-1 fw-semibold">Password</h6>
-                                        <p class="text-muted small mb-2">Keep your account secure with a strong password</p>
-                                        <small class="text-muted d-flex align-items-center">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            Last password change: Never
-                                        </small>
-                                    </div>
-                                    <button class="btn btn-maroon btn-sm" onclick="openChangePasswordModal()">
-                                        <i class="fas fa-key me-1"></i>Change Password
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- System Tab -->
-                    <div class="tab-pane fade" id="system-content">
                         <!-- Database Settings -->
+                        <!--
                         <div class="mb-4">
                             <h6 class="mb-3 fw-semibold d-flex align-items-center">
                                 <i class="fas fa-database me-2" style="color: var(--tappark-maroon);"></i>Database Configuration
@@ -293,6 +263,7 @@
                                 </div>
                             <?= form_close() ?>
                         </div>
+-->
 
                         <!-- Application Settings -->
                         <div class="mb-4">
@@ -457,7 +428,7 @@
                             </div>
                         </div>
 
-                        <!-- System Maintenance -->
+                        <!-- System Maintenance 
                         <div class="mb-0">
                             <h6 class="mb-3 fw-semibold d-flex align-items-center">
                                 <i class="fas fa-tools me-2" style="color: var(--tappark-maroon);"></i>System Maintenance
@@ -481,6 +452,7 @@
                                 <small class="mb-0">System maintenance features are currently under development.</small>
                             </div>
                         </div>
+                        -->
                     </div>
                 </div>
             </div>

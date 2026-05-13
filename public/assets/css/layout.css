@@ -240,6 +240,18 @@ h6,
     transition: all 0.3s ease;
 }
 
+.sidebar-brand {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.sidebar-brand:hover .sidebar-title,
+.sidebar-brand:hover .sidebar-subtitle {
+    color: #ffffff;
+}
+
 .sidebar.collapsed .sidebar-header {
     padding: 20px 10px;
 }

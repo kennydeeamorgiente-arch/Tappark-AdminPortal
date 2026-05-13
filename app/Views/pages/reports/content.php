@@ -362,7 +362,7 @@
                                 <h6 class="mb-1 fw-bold">
                                     <i class="fas fa-fire me-2" style="color: var(--tappark-maroon);"></i>Hourly Occupancy Heatmap
                                 </h6>
-                                <small class="text-muted">Parking occupancy by hour (24 hours)</small>
+                                <small class="text-muted">Parking occupancyz by hour (24 hours)</small>
                             </div>
                             <div class="card-body">
                                 <div style="height: 350px; position: relative;">

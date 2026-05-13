@@ -159,8 +159,8 @@
         "dashboard-stat-total-subbs": {
             "visible": true,
             "order": 1,
-            "title": "Total SUBBS",
-            "subtitle": "Active: 58 | Inactive: 1",
+            "title": "Total Subscriber",
+            "subtitle": "Active: 59 | Inactive: 1",
             "icon": "fas fa-users",
             "accent": "#8b1f2b",
             "size": "small",
