@@ -506,8 +506,7 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1rem 1.5rem;">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer" style="padding: 1.5rem 1.5rem;">
             </div>
         </div>
     </div>
