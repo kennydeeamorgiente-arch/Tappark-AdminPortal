@@ -10,14 +10,9 @@
                     </h2>
                     <p class="mb-0 text-muted">Manage subscription plans and pricing</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-maroon" id="addPlanBtn">
-                        <i class="fas fa-plus me-2"></i>Add Plan
-                    </button>
-                    <button class="btn btn-outline-maroon" id="vehicleSettingsBtn" style="border-color: #800000; color: #800000;">
-                        <i class="fas fa-cog me-2"></i>Settings
-                    </button>
-                </div>
+                <button class="btn btn-maroon" id="addPlanBtn">
+                    <i class="fas fa-plus me-2"></i>Add Plan
+                </button>
             </div>
         </div>
     </div>
@@ -164,43 +159,6 @@
         </div>
     </div>
 
-    <!-- Vehicle Type Settings Modal -->
-    <div class="modal fade" id="vehicleSettingsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header text-white" style="background: linear-gradient(135deg, #800000 0%, #990000 100%);">
-                    <h5 class="modal-title fw-bold text-white">
-                        <i class="fas fa-car me-2"></i>Vehicle Type Settings
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert alert-info mb-4">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Set the hourly deduction rates for each vehicle type. These rates are used for calculating subscription usage.
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="vehicleTypesTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40%">Vehicle Type Name</th>
-                                    <th style="width: 30%">Rate (₱/hr)</th>
-                                    <th style="width: 30%">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="vehicleTypesTableBody">
-                                <!-- Loaded via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Load CSS -->
