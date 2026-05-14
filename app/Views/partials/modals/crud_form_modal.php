@@ -20,10 +20,6 @@
                 <!-- Form Section (shown by default) -->
                 <div id="crudFormSection">
                     <!-- Static Role Warning Banner -->
-                    <div id="staticRoleWarning" class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center" style="display: none !important;">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <span>This user's role is fixed and cannot be changed from this form.</span>
-                    </div>
 
                     <?= form_open('', ['id' => 'crudForm']) ?>
                         <!-- Hidden Fields -->
@@ -60,10 +56,6 @@
                                 <label class="form-label">Email <span class="text-danger">*</span></label>
                                 <input type="email" class="form-control" name="email" id="userEmail">
                                 <div class="invalid-feedback" id="error-email"></div>
-                            </div>
-                            <div class="alert alert-light border small mb-3">
-                                <i class="fas fa-info-circle me-2 text-primary"></i>
-                                Enter the subscriber details manually. The token balance and account status are managed during edits.
                             </div>
                             <input type="hidden" name="user_type_id" id="userTypeId" value="1">
 
