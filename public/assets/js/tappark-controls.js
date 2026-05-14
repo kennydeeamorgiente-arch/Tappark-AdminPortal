@@ -206,6 +206,7 @@
         });
 
         wrapper.addEventListener('click', event => {
+            event.stopPropagation();
             const nav = event.target.closest('[data-date-nav]');
             const day = event.target.closest('.tappark-date-day');
             const clear = event.target.closest('[data-date-clear]');

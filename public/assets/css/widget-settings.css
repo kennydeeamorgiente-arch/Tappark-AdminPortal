@@ -145,6 +145,10 @@
     grid-column: span 2;
 }
 
+.widget-field-collapse {
+    grid-column: span 2;
+}
+
 .widget-field label {
     display: block;
     margin-bottom: 0.28rem;
@@ -211,6 +215,42 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.widget-section-collapsible .widget-collapse-header {
+    position: relative;
+    padding-right: 2.75rem !important;
+}
+
+.widget-section-collapsible .widget-collapse-toggle {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.85rem;
+    width: 2rem;
+    height: 2rem;
+    z-index: 2;
+    border: 1px solid rgba(128, 0, 0, 0.14);
+    border-radius: 999px;
+    background: rgba(128, 0, 0, 0.06);
+    color: var(--ws-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.widget-section-collapsible .widget-collapse-toggle:hover {
+    background: rgba(128, 0, 0, 0.12);
+    border-color: rgba(128, 0, 0, 0.24);
+    transform: translateY(-1px);
+}
+
+.widget-section-collapsible.widget-collapsed > .card-body {
+    display: none !important;
+}
+
+.widget-section-collapsible.widget-collapsed .widget-collapse-toggle {
+    color: var(--ws-accent);
 }
 
 .widget-settings-modal-footer {
@@ -281,6 +321,16 @@
     background: var(--ws-input-readonly-bg) !important;
     border-color: var(--ws-input-border) !important;
     color: var(--ws-muted) !important;
+}
+
+[data-bs-theme="dark"] .widget-section-collapsible .widget-collapse-toggle {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(232, 212, 212, 0.16);
+}
+
+[data-bs-theme="dark"] .widget-section-collapsible .widget-collapse-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(232, 212, 212, 0.24);
 }
 
 @media (max-width: 1180px) {

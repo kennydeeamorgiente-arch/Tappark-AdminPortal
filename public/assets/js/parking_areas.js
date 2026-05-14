@@ -1217,6 +1217,8 @@ if (typeof window.initPageScripts === 'function') {
                     // Make rows/columns required again
                     $('#editSectionRows, #editSectionColumns').prop('required', true);
                 }
+
+                updateEditTotalSpotsPreview();
             });
 
             // Handle section mode change for Edit Section modal
@@ -1246,6 +1248,8 @@ if (typeof window.initPageScripts === 'function') {
                     $('#editSectionRows, #editSectionColumns').prop('required', true);
                     $('#editSectionCapacity, #editSectionGridWidth').prop('required', false);
                 }
+
+                updateEditTotalSpotsPreview();
             });
 
             // Auto-calculate total spots preview for Add Section
@@ -1256,12 +1260,23 @@ if (typeof window.initPageScripts === 'function') {
                 $('#totalSpotsPreview').text(`${total} spots`);
             });
 
-            // Auto-calculate total spots preview for Edit Section
-            $('#editSectionRows, #editSectionColumns').on('input', function () {
-                const rows = parseInt($('#editSectionRows').val()) || 0;
-                const cols = parseInt($('#editSectionColumns').val()) || 0;
-                const total = rows * cols;
+            function updateEditTotalSpotsPreview() {
+                const mode = $('input[name="editSectionMode"]:checked').val() || 'slot_based';
+                let total = 0;
+
+                if (mode === 'capacity_only') {
+                    total = parseInt($('#editSectionCapacity').val()) || 0;
+                } else {
+                    const rows = parseInt($('#editSectionRows').val()) || 0;
+                    const cols = parseInt($('#editSectionColumns').val()) || 0;
+                    total = rows * cols;
+                }
+
                 $('#editTotalSpotsPreview').text(`${total} spots`);
+            }
+
+            $('#editSectionRows, #editSectionColumns, #editSectionCapacity').on('input change', function () {
+                updateEditTotalSpotsPreview();
             });
 
             function updateTotalSpotsPreview() {
@@ -2281,7 +2296,7 @@ if (typeof window.initPageScripts === 'function') {
                             $('#editSectionId').val(section.parking_section_id);
                             $('#editSectionName').val(section.section_name);
                             $('#editSectionFloor').val(section.floor || section.floor_number || 1);
-                            $('#editSectionVehicleType').val(section.vehicle_type_id);
+                            $('#editSectionVehicleType').val(section.vehicle_type_id).trigger('change');
 
                             // Check if this is a special vehicle type and set up special options
                             const vehicleTypeName = $('#editSectionVehicleType option:selected').text();
@@ -2318,26 +2333,19 @@ if (typeof window.initPageScripts === 'function') {
                                 $('#editSectionColumns').val(section.columns);
                             }
 
-                            // Lock fields to maintain layout integrity
-                            const lockedFields = [
-                                '#editSectionFloor',
-                                '#editSectionVehicleType',
-                                '#editSectionRows',
-                                '#editSectionColumns',
-                                '#editSectionGridWidth'
-                            ];
-
-                            // Capacity is locked in slot-based mode (as it's a calculated field)
-                            // but remains editable in capacity_only mode per user requirement
                             const currentMode = section.section_mode || 'slot_based';
                             if (currentMode === 'slot_based') {
-                                lockedFields.push('#editSectionCapacity');
+                                $('#editSectionCapacity').prop('disabled', true).addClass('form-control-integrity-locked');
                             } else {
                                 $('#editSectionCapacity').prop('disabled', false).removeClass('form-control-integrity-locked');
                             }
 
-                            $(lockedFields.join(', ')).prop('disabled', true).addClass('form-control-integrity-locked');
-                            $('input[name="editSectionMode"]').prop('disabled', true);
+                            $('#editSectionFloor, #editSectionVehicleType, #editSectionRows, #editSectionColumns, #editSectionGridWidth')
+                                .prop('disabled', false)
+                                .removeClass('form-control-integrity-locked');
+                            $('input[name="editSectionMode"]').prop('disabled', false);
+
+                            updateEditTotalSpotsPreview();
 
                             const modal = bootstrap.Modal.getOrCreateInstance($('#editSectionModal')[0], {
                                 backdrop: 'static',

@@ -462,7 +462,8 @@
         }
     });
 
-    $(document).off('click.tapparkDateDay').on('click.tapparkDateDay', '.tappark-date-day', function() {
+    $(document).off('click.tapparkDateDay').on('click.tapparkDateDay', '.tappark-date-day', function(e) {
+        e.stopPropagation();
         const $picker = $(this).closest('.tappark-date');
         $('#' + $picker.data('date-target')).val($(this).data('date'));
         $picker.data('viewDate', parseIsoDate($(this).data('date')));
@@ -470,21 +471,24 @@
         closeDatePickers();
     });
 
-    $(document).off('click.tapparkDateNav').on('click.tapparkDateNav', '.tappark-date-nav', function() {
+    $(document).off('click.tapparkDateNav').on('click.tapparkDateNav', '.tappark-date-nav', function(e) {
+        e.stopPropagation();
         const $picker = $(this).closest('.tappark-date');
         const viewDate = $picker.data('viewDate') instanceof Date ? $picker.data('viewDate') : new Date();
         $picker.data('viewDate', new Date(viewDate.getFullYear(), viewDate.getMonth() + Number($(this).data('date-nav')), 1));
         renderDatePicker($picker);
     });
 
-    $(document).off('click.tapparkDateClear').on('click.tapparkDateClear', '[data-date-clear]', function() {
+    $(document).off('click.tapparkDateClear').on('click.tapparkDateClear', '[data-date-clear]', function(e) {
+        e.stopPropagation();
         const $picker = $(this).closest('.tappark-date');
         $('#' + $picker.data('date-target')).val('');
         renderDatePicker($picker);
         closeDatePickers();
     });
 
-    $(document).off('click.tapparkDateToday').on('click.tapparkDateToday', '[data-date-today]', function() {
+    $(document).off('click.tapparkDateToday').on('click.tapparkDateToday', '[data-date-today]', function(e) {
+        e.stopPropagation();
         const $picker = $(this).closest('.tappark-date');
         const today = new Date();
         $('#' + $picker.data('date-target')).val(toIsoDate(today));

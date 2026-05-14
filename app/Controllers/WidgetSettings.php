@@ -90,6 +90,7 @@ class WidgetSettings extends BaseController
                 'chartType' => in_array($chartType, self::ALLOWED_CHARTS, true) ? $chartType : '',
                 'dataSource' => in_array($dataSource, self::ALLOWED_SOURCES, true) ? $dataSource : 'Bookings',
                 'exportVisible' => (bool) ($setting['exportVisible'] ?? true),
+                'sectionCollapsed' => (bool) ($setting['sectionCollapsed'] ?? false),
             ];
         }
 

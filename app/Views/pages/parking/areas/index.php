@@ -820,15 +820,15 @@
                 <div class="modal-body">
                     <!-- Form Section (shown by default) -->
                         <div id="editSectionFormSection">
-                            <!-- Data Integrity Warning -->
+                            <!-- Layout Guidance -->
                             <div class="alert alert-warning mb-3">
                                 <div class="d-flex">
                                     <div class="me-3">
                                         <i class="fas fa-exclamation-triangle fa-2x"></i>
                                     </div>
                                     <div>
-                                        <h6 class="alert-heading fw-bold mb-1">Dimensions & Vehicle Type Locked</h6>
-                                        <p class="small mb-0">Grid dimensions and vehicle types are locked to maintain layout integrity. To change these, please <strong>delete and recreate</strong> the section in the Layout Designer.</p>
+                                        <h6 class="alert-heading fw-bold mb-1">Layout Update Reminder</h6>
+                                        <p class="small mb-0">You can edit the section details here. If you change the number of rows, columns, or slots, please update the layout manually in the Layout Designer after saving.</p>
                                     </div>
                                 </div>
                             </div>
@@ -891,6 +891,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Total Spots: <span class="badge bg-primary" id="editTotalSpotsPreview">0</span></label>
+                                <div class="form-text">Changing the slot count here updates the section record, but the visual layout still needs to be adjusted manually.</div>
                             </div>
                         </div>
                         

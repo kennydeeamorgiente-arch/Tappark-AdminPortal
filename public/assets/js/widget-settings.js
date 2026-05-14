@@ -221,6 +221,10 @@
         return card?.closest('[class*="col-"]') || card;
     }
 
+    function isCollapsibleWidget(widget) {
+        return !!(widget && widget.type === 'section' && widget.card && widget.card.querySelector('.card-header') && widget.card.querySelector('.card-body'));
+    }
+
     function removeColumnClasses(element) {
         if (!element) return;
         Array.from(element.classList).forEach(cls => {
@@ -379,11 +383,90 @@
                 chartType: '',
                 dataSource: widget.source,
                 exportVisible: true,
+                sectionCollapsed: false,
                 ...(settings[widget.id] || {})
             };
         });
         writeSettings(page, settings);
         return settings;
+    }
+
+    function refreshWidgetCharts(widget) {
+        if (!widget?.card) return;
+        const charts = { ...(window.dashboardCharts || {}), ...(window.reportsCharts || {}) };
+        const chartIds = Array.from(widget.card.querySelectorAll('canvas')).map(canvas => canvas.id).filter(Boolean);
+        if (!chartIds.length) return;
+
+        const matches = Object.values(charts).filter(item => item?.canvas?.id && chartIds.includes(item.canvas.id));
+        if (!matches.length) return;
+
+        requestAnimationFrame(() => {
+            matches.forEach(chart => {
+                chart.resize();
+                chart.update();
+            });
+        });
+    }
+
+    function setWidgetCollapsed(widget, collapsed, options = {}) {
+        if (!isCollapsibleWidget(widget)) return;
+        const header = widget.card.querySelector('.card-header');
+        const body = widget.card.querySelector('.card-body');
+        const button = widget.card.querySelector('.widget-collapse-toggle');
+        const isCollapsed = !!collapsed;
+
+        widget.card.classList.add('widget-section-collapsible');
+        widget.card.classList.toggle('widget-collapsed', isCollapsed);
+        header?.classList.add('widget-collapse-header');
+        if (body) {
+            body.style.display = isCollapsed ? 'none' : '';
+        }
+        if (button) {
+            button.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            button.innerHTML = `<i class="fas ${isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i>`;
+            button.title = isCollapsed ? 'Expand widget' : 'Collapse widget';
+        }
+        widget.card.dataset.widgetCollapsed = isCollapsed ? '1' : '0';
+
+        if (!isCollapsed && !options.skipChartRefresh) {
+            refreshWidgetCharts(widget);
+        }
+    }
+
+    function ensureCollapseControl(widget) {
+        if (!isCollapsibleWidget(widget)) return;
+        const header = widget.card.querySelector('.card-header');
+        if (!header) return;
+
+        widget.card.classList.add('widget-section-collapsible');
+        header.classList.add('widget-collapse-header');
+        let toggle = header.querySelector('.widget-collapse-toggle');
+        if (!toggle) {
+            toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'widget-collapse-toggle';
+            toggle.setAttribute('aria-label', 'Toggle widget');
+            toggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const currentlyCollapsed = widget.card.classList.contains('widget-collapsed');
+                setWidgetCollapsed(widget, !currentlyCollapsed);
+            });
+            header.appendChild(toggle);
+        }
+    }
+
+    function clearCollapseControl(widget) {
+        if (!widget?.card) return;
+        const header = widget.card.querySelector('.card-header');
+        const body = widget.card.querySelector('.card-body');
+        widget.card.classList.remove('widget-collapsed', 'widget-section-collapsible');
+        widget.card.dataset.widgetCollapsed = '0';
+        header?.classList.remove('widget-collapse-header');
+        widget.card.querySelectorAll('.widget-collapse-toggle').forEach(toggle => toggle.remove());
+        if (body) {
+            body.style.display = '';
+        }
     }
 
     function applySettingsToWidget(widget, setting) {
@@ -420,6 +503,12 @@
         widget.card.style.setProperty('--widget-accent', setting.accent || '#8b1f2b');
         widget.card.style.borderTop = `3px solid ${setting.accent || '#8b1f2b'}`;
         applyChartType(widget.chartId, setting.chartType);
+        if (widget.type === 'section') {
+            ensureCollapseControl(widget);
+            setWidgetCollapsed(widget, setting.sectionCollapsed === true, { skipChartRefresh: true });
+        } else {
+            clearCollapseControl(widget);
+        }
     }
 
     function applyChartType(chartId, chartType) {
@@ -457,6 +546,7 @@
                 const sourceOptions = APPROVED_SOURCES.map(source => `<option value="${source}" ${lockedDataSource === source ? 'selected' : ''}>${source}</option>`).join('');
                 const isStat = widget.type === 'stat';
                 const isChart = widget.type === 'chart';
+                const isSection = widget.type === 'section';
                 const supportsExport = page === 'reports';
                 return `<div class="widget-settings-row" data-widget-id="${widget.id}">
                     <div class="widget-row-head">
@@ -498,6 +588,14 @@
                             <option value="full" ${setting.size === 'full' ? 'selected' : ''}>Full width</option>
                         </select>
                     </div>
+                    ${isSection ? `
+                    <div class="widget-field widget-field-collapse">
+                        <label>Default State</label>
+                        <select class="form-select form-select-sm widget-section-collapsed">
+                            <option value="1" ${setting.sectionCollapsed === true ? 'selected' : ''}>Collapsed</option>
+                            <option value="0" ${setting.sectionCollapsed !== true ? 'selected' : ''}>Expanded</option>
+                        </select>
+                    </div>` : ''}
                     <div class="widget-field widget-field-chart">
                         <label>Chart</label>
                         ${isChart
@@ -536,6 +634,7 @@
                 icon: row.querySelector('.widget-icon').value.trim(),
                 accent: row.querySelector('.widget-accent').value || '#8b1f2b',
                 size: row.querySelector('.widget-size').value,
+                sectionCollapsed: row.querySelector('.widget-section-collapsed') ? row.querySelector('.widget-section-collapsed').value !== '0' : false,
                 chartType: row.querySelector('.widget-chart-type').value,
                 dataSource: APPROVED_SOURCES.includes(row.querySelector('.widget-source').value) ? row.querySelector('.widget-source').value : 'Bookings',
                 exportVisible: row.querySelector('.widget-export-visible') ? row.querySelector('.widget-export-visible').checked : true
@@ -562,7 +661,7 @@
                     <div class="modal-header widget-settings-modal-header">
                         <div>
                             <h5 class="modal-title mb-1"><i class="fas fa-sliders me-2"></i><span class="widget-settings-page">Widget</span> Settings</h5>
-                            <p class="mb-0">Control visible widgets, order, labels, chart type, and approved data source.</p>
+                            <p class="mb-0">Control visible widgets, order, labels, section state, chart type, and approved data source.</p>
                         </div>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>

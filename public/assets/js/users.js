@@ -3933,14 +3933,9 @@ if (typeof window.initPageScripts === 'function') {
             });
 
             // Add Attendant Button
-              $('#addAttendantBtn').on('click', function (e) {
+            $('#addAttendantBtn').on('click', function (e) {
                   e.preventDefault();
                   openCrudModal('add', 'attendants', null, 2); // 2 = Attendant
-              });
-
-              $('#addGuestBtn').on('click', function (e) {
-                  e.preventDefault();
-                  openCrudModal('add', 'attendants', null, 4); // 4 = Guest
               });
 
             // Add Subscriber Button

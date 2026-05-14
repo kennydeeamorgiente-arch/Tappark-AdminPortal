@@ -25,9 +25,6 @@
                         <li><a class="dropdown-item py-2" href="#" id="addAttendantBtn">
                             <i class="fas fa-user-tie me-2 text-info"></i>Add Attendant
                         </a></li>
-                        <li><a class="dropdown-item py-2" href="#" id="addGuestBtn">
-                            <i class="fas fa-user-clock me-2 text-secondary"></i>Add Guest
-                        </a></li>
                       </ul>
                   </div>
               </div>
