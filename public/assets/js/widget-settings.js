@@ -414,13 +414,38 @@
         const body = widget.card.querySelector('.card-body');
         const button = widget.card.querySelector('.widget-collapse-toggle');
         const isCollapsed = !!collapsed;
+        const animate = options.animate !== false;
+        const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const shouldAnimate = animate && !reducedMotion && !!body;
+        const finish = () => {
+            if (!body) return;
+            widget.card.classList.remove('widget-collapsing');
+            body.style.transition = '';
+            body.style.willChange = '';
+            body.style.overflow = '';
+            body.style.transform = '';
+            if (isCollapsed) {
+                body.style.display = 'none';
+                body.style.maxHeight = '0px';
+                body.style.opacity = '0';
+            } else {
+                body.style.maxHeight = 'none';
+                body.style.opacity = '1';
+            }
+        };
+
+        const onTransitionEnd = (event) => {
+            if (event.target !== body || event.propertyName !== 'max-height') return;
+            body.removeEventListener('transitionend', onTransitionEnd);
+            finish();
+            if (!isCollapsed && !options.skipChartRefresh) {
+                refreshWidgetCharts(widget);
+            }
+        };
 
         widget.card.classList.add('widget-section-collapsible');
         widget.card.classList.toggle('widget-collapsed', isCollapsed);
         header?.classList.add('widget-collapse-header');
-        if (body) {
-            body.style.display = isCollapsed ? 'none' : '';
-        }
         if (button) {
             button.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
             button.innerHTML = `<i class="fas ${isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i>`;
@@ -428,8 +453,49 @@
         }
         widget.card.dataset.widgetCollapsed = isCollapsed ? '1' : '0';
 
-        if (!isCollapsed && !options.skipChartRefresh) {
-            refreshWidgetCharts(widget);
+        if (!body) {
+            return;
+        }
+
+        if (!shouldAnimate) {
+            body.style.display = isCollapsed ? 'none' : '';
+            body.style.maxHeight = isCollapsed ? '0px' : 'none';
+            body.style.opacity = isCollapsed ? '0' : '1';
+            body.style.transform = isCollapsed ? 'translateY(-6px)' : 'translateY(0)';
+            if (!isCollapsed && !options.skipChartRefresh) {
+                refreshWidgetCharts(widget);
+            }
+            return;
+        }
+
+        body.removeEventListener('transitionend', onTransitionEnd);
+        widget.card.classList.add('widget-collapsing');
+        body.style.display = '';
+        body.style.overflow = 'hidden';
+        body.style.willChange = 'max-height, opacity, transform';
+
+        if (isCollapsed) {
+            body.style.maxHeight = `${body.scrollHeight}px`;
+            body.style.opacity = '1';
+            body.style.transform = 'translateY(0)';
+            body.getBoundingClientRect();
+            requestAnimationFrame(() => {
+                body.addEventListener('transitionend', onTransitionEnd);
+                body.style.maxHeight = '0px';
+                body.style.opacity = '0';
+                body.style.transform = 'translateY(-6px)';
+            });
+        } else {
+            body.style.maxHeight = '0px';
+            body.style.opacity = '0';
+            body.style.transform = 'translateY(-6px)';
+            body.getBoundingClientRect();
+            requestAnimationFrame(() => {
+                body.addEventListener('transitionend', onTransitionEnd);
+                body.style.maxHeight = `${body.scrollHeight}px`;
+                body.style.opacity = '1';
+                body.style.transform = 'translateY(0)';
+            });
         }
     }
 
@@ -505,7 +571,7 @@
         applyChartType(widget.chartId, setting.chartType);
         if (widget.type === 'section') {
             ensureCollapseControl(widget);
-            setWidgetCollapsed(widget, setting.sectionCollapsed === true, { skipChartRefresh: true });
+            setWidgetCollapsed(widget, setting.sectionCollapsed === true, { skipChartRefresh: true, animate: false });
         } else {
             clearCollapseControl(widget);
         }

@@ -49,6 +49,23 @@
   --tappark-gray-bg: #2a2a2a;
 }
 
+/* Global modal backdrop tuning */
+.modal-backdrop.show {
+  background-color: rgba(0, 0, 0, 0.52);
+}
+
+[data-bs-theme="dark"] .modal-backdrop.show {
+  background-color: rgba(7, 7, 9, 0.78);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Make modal surfaces stand out a bit more in dark mode */
+[data-bs-theme="dark"] .modal-content {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
+}
+
 /* Global dropdown styling overrides */
 [data-bs-theme="dark"] .dropdown-menu {
   background: linear-gradient(145deg, #262b31 0%, #30363c 100%);

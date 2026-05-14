@@ -219,15 +219,18 @@
 
 .widget-section-collapsible .widget-collapse-header {
     position: relative;
-    padding-right: 2.75rem !important;
+    min-height: 3.25rem;
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+    padding-right: 3.25rem !important;
 }
 
 .widget-section-collapsible .widget-collapse-toggle {
     position: absolute;
-    top: 0.8rem;
-    right: 0.85rem;
-    width: 2rem;
-    height: 2rem;
+    top: 50%;
+    right: 0.95rem;
+    width: 2.15rem;
+    height: 2.15rem;
     z-index: 2;
     border: 1px solid rgba(128, 0, 0, 0.14);
     border-radius: 999px;
@@ -237,16 +240,30 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    transform: translateY(-50%);
 }
 
 .widget-section-collapsible .widget-collapse-toggle:hover {
     background: rgba(128, 0, 0, 0.12);
     border-color: rgba(128, 0, 0, 0.24);
-    transform: translateY(-1px);
+    transform: translateY(-50%) translateY(-1px);
 }
 
 .widget-section-collapsible.widget-collapsed > .card-body {
     display: none !important;
+}
+
+.widget-section-collapsible > .card-body {
+    overflow: hidden;
+    max-height: none;
+    opacity: 1;
+    transform: translateY(0);
+    transition: max-height 0.28s ease, opacity 0.22s ease, transform 0.22s ease;
+    will-change: max-height, opacity, transform;
+}
+
+.widget-section-collapsible.widget-collapsing > .card-body {
+    display: block !important;
 }
 
 .widget-section-collapsible.widget-collapsed .widget-collapse-toggle {
