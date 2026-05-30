@@ -193,6 +193,13 @@ class Database extends Config
     {
         parent::__construct();
 
+        $this->default['hostname'] = (string) (env('DB_HOST') ?: env('MYSQLHOST') ?: $this->default['hostname']);
+        $this->default['username'] = (string) (env('DB_USERNAME') ?: env('MYSQLUSER') ?: $this->default['username']);
+        $this->default['password'] = (string) (env('DB_PASSWORD') ?: env('MYSQLPASSWORD') ?: $this->default['password']);
+        $this->default['database'] = (string) (env('DB_DATABASE') ?: env('MYSQLDATABASE') ?: $this->default['database']);
+        $this->default['DBDriver'] = (string) (env('DB_DRIVER') ?: $this->default['DBDriver']);
+        $this->default['port'] = (int) (env('DB_PORT') ?: env('MYSQLPORT') ?: $this->default['port']);
+
         // Comment out automatic test database switching to use production database
         // if (ENVIRONMENT === 'testing') {
         //     $this->defaultGroup = 'tests';

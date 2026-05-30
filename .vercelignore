@@ -1,0 +1,9 @@
+/.git
+/vendor
+/tests
+/writable/cache/*
+/writable/debugbar/*
+/writable/logs/*
+/writable/session/*
+/writable/uploads/*
+/php_errors.log

@@ -89,4 +89,14 @@ class Encryption extends BaseConfig
      * by CI3 Encryption default configuration.
      */
     public string $cipher = 'AES-256-CTR';
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $key = (string) (env('ENCRYPTION_KEY') ?: env('encryption.key') ?: '');
+        if ($key !== '') {
+            $this->key = $key;
+        }
+    }
 }

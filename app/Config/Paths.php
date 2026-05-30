@@ -72,4 +72,34 @@ class Paths
      * is used when no value is provided to `Services::renderer()`.
      */
     public string $viewDirectory = __DIR__ . '/../Views';
+
+    public function __construct()
+    {
+        if (! getenv('VERCEL')) {
+            return;
+        }
+
+        $sourceWritable = $this->writableDirectory;
+        $targetWritable = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
+            . DIRECTORY_SEPARATOR
+            . 'tappark-writable';
+
+        foreach (['cache', 'config', 'debugbar', 'logs', 'session', 'uploads'] as $directory) {
+            $path = $targetWritable . DIRECTORY_SEPARATOR . $directory;
+            if (! is_dir($path)) {
+                @mkdir($path, 0775, true);
+            }
+        }
+
+        $sourceConfig = $sourceWritable . DIRECTORY_SEPARATOR . 'config';
+        $targetConfig = $targetWritable . DIRECTORY_SEPARATOR . 'config';
+        foreach (glob($sourceConfig . DIRECTORY_SEPARATOR . '*.json') ?: [] as $sourceFile) {
+            $targetFile = $targetConfig . DIRECTORY_SEPARATOR . basename($sourceFile);
+            if (! is_file($targetFile)) {
+                @copy($sourceFile, $targetFile);
+            }
+        }
+
+        $this->writableDirectory = $targetWritable;
+    }
 }

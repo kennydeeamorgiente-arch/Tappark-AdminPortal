@@ -22,14 +22,42 @@ class App extends BaseConfig
     public function __construct()
     {
         parent::__construct();
+
+        $configuredBaseURL = (string) (
+            env('APP_BASE_URL')
+            ?: env('CI_BASE_URL')
+            ?: env('app.baseURL')
+            ?: ''
+        );
+
+        if ($configuredBaseURL !== '') {
+            $this->baseURL = rtrim($configuredBaseURL, '/') . '/';
+            return;
+        }
+
+        $vercelURL = (string) (env('VERCEL_URL') ?: '');
+        if ($vercelURL !== '') {
+            $this->baseURL = 'https://' . rtrim(preg_replace('#^https?://#', '', $vercelURL), '/') . '/';
+            return;
+        }
+
         // Automatically detects: http://localhost:8080/ OR http://172.16.57.142:8080/
         // Check if running from CLI (spark serve)
         if (php_sapi_name() === 'cli' || !isset($_SERVER['HTTP_HOST'])) {
             // Default baseURL for CLI (will be overridden when server starts)
             $this->baseURL = 'http://localhost:8080/';
         } else {
-            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $this->baseURL = $protocol . '://' . $_SERVER['HTTP_HOST'] . '/';
+            $forwardedProto = (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '');
+            $protocol = $forwardedProto !== ''
+                ? strtolower(trim(explode(',', $forwardedProto)[0]))
+                : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+
+            $forwardedHost = (string) ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? '');
+            $host = $forwardedHost !== ''
+                ? trim(explode(',', $forwardedHost)[0])
+                : $_SERVER['HTTP_HOST'];
+
+            $this->baseURL = $protocol . '://' . $host . '/';
         }
     }
 

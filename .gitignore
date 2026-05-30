@@ -124,3 +124,7 @@ _modules/*
 
 /results/
 /phpunit*.xml
+
+# Vercel PHP entrypoint
+!/api/
+!/api/index.php
