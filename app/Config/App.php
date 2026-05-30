@@ -35,15 +35,15 @@ class App extends BaseConfig
             return;
         }
 
-        $vercelURL = (string) (env('VERCEL_URL') ?: '');
-        if ($vercelURL !== '') {
-            $this->baseURL = 'https://' . rtrim(preg_replace('#^https?://#', '', $vercelURL), '/') . '/';
-            return;
-        }
-
         // Automatically detects: http://localhost:8080/ OR http://172.16.57.142:8080/
         // Check if running from CLI (spark serve)
         if (php_sapi_name() === 'cli' || !isset($_SERVER['HTTP_HOST'])) {
+            $vercelURL = (string) (env('VERCEL_URL') ?: '');
+            if ($vercelURL !== '') {
+                $this->baseURL = 'https://' . rtrim(preg_replace('#^https?://#', '', $vercelURL), '/') . '/';
+                return;
+            }
+
             // Default baseURL for CLI (will be overridden when server starts)
             $this->baseURL = 'http://localhost:8080/';
         } else {
@@ -83,7 +83,7 @@ class App extends BaseConfig
      * something else. If you have configured your web server to remove this file
      * from your site URIs, set this variable to an empty string.
      */
-    public string $indexPage = 'index.php';
+    public string $indexPage = '';
 
     /**
      * --------------------------------------------------------------------------
