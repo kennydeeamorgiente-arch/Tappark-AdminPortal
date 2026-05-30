@@ -191,6 +191,43 @@ class Login extends BaseController
         ]);
     }
 
+    private function getUsersTableFields(): array
+    {
+        try {
+            return $this->userModel->db->getFieldNames('users');
+        } catch (\Throwable $e) {
+            log_message('error', 'Unable to inspect users table fields during login: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function findLoginUser(string $identifier, array $userFields): ?array
+    {
+        if (empty($userFields)) {
+            return null;
+        }
+
+        $identifierColumns = array_values(array_intersect(['email', 'external_user_id'], $userFields));
+        if (empty($identifierColumns)) {
+            log_message('error', 'Login failed: users table is missing email/external_user_id columns.');
+            return null;
+        }
+
+        try {
+            $query = $this->userModel->groupStart();
+            foreach ($identifierColumns as $index => $column) {
+                $index === 0
+                    ? $query->where($column, $identifier)
+                    : $query->orWhere($column, $identifier);
+            }
+
+            return $query->groupEnd()->first();
+        } catch (\Throwable $e) {
+            log_message('error', 'Login user lookup failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Process login form submission
      * 
@@ -272,12 +309,16 @@ class Login extends BaseController
             ])->setStatusCode(422);
         }
 
+        $userFields = $this->getUsersTableFields();
+        if (empty($userFields)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Login is temporarily unavailable. Please check the database configuration.'
+            ])->setStatusCode(503);
+        }
+
         // First, check if user exists (regardless of status)
-        $user = $this->userModel->groupStart()
-            ->where('email', $identifier)
-            ->orWhere('external_user_id', $identifier)
-            ->groupEnd()
-            ->first();
+        $user = $this->findLoginUser($identifier, $userFields);
 
         $isMisVerifiedSubscriber = function () use ($identifier, $password): bool {
             try {
@@ -321,7 +362,7 @@ class Login extends BaseController
         }
 
         // User exists - check if status is active
-        if ($user['status'] !== 'active') {
+        if (in_array('status', $userFields, true) && ($user['status'] ?? '') !== 'active') {
             if ($isMisVerifiedSubscriber()) {
                 return $this->response->setJSON([
                     'success' => false,

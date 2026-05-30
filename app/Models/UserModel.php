@@ -158,10 +158,22 @@ class UserModel extends Model
      */
     public function updateOnlineStatus($userId, $isOnline)
     {
-        return $this->update($userId, [
-            'is_online' => $isOnline ? 1 : 0,
-            'last_activity_at' => date('Y-m-d H:i:s')
-        ]);
+        $fields = $this->db->getFieldNames($this->table);
+        $data = [];
+
+        if (in_array('is_online', $fields, true)) {
+            $data['is_online'] = $isOnline ? 1 : 0;
+        }
+
+        if (in_array('last_activity_at', $fields, true)) {
+            $data['last_activity_at'] = date('Y-m-d H:i:s');
+        }
+
+        if (empty($data)) {
+            return true;
+        }
+
+        return $this->update($userId, $data);
     }
 
     /**
