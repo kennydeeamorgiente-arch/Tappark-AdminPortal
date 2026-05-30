@@ -193,6 +193,31 @@ class Database extends Config
     {
         parent::__construct();
 
+        $databaseUrl = (string) (
+            env('DATABASE_URL')
+            ?: env('MYSQL_URL')
+            ?: env('JAWSDB_URL')
+            ?: env('CLEARDB_DATABASE_URL')
+            ?: ''
+        );
+
+        if ($databaseUrl !== '') {
+            $parts = parse_url($databaseUrl);
+            if (is_array($parts)) {
+                $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+
+                if (str_contains($scheme, 'mysql')) {
+                    $this->default['DBDriver'] = 'MySQLi';
+                }
+
+                $this->default['hostname'] = (string) ($parts['host'] ?? $this->default['hostname']);
+                $this->default['username'] = isset($parts['user']) ? rawurldecode((string) $parts['user']) : $this->default['username'];
+                $this->default['password'] = isset($parts['pass']) ? rawurldecode((string) $parts['pass']) : $this->default['password'];
+                $this->default['database'] = isset($parts['path']) ? ltrim((string) $parts['path'], '/') : $this->default['database'];
+                $this->default['port'] = (int) ($parts['port'] ?? $this->default['port']);
+            }
+        }
+
         $this->default['hostname'] = (string) (env('DB_HOST') ?: env('MYSQLHOST') ?: $this->default['hostname']);
         $this->default['username'] = (string) (env('DB_USERNAME') ?: env('MYSQLUSER') ?: $this->default['username']);
         $this->default['password'] = (string) (env('DB_PASSWORD') ?: env('MYSQLPASSWORD') ?: $this->default['password']);
